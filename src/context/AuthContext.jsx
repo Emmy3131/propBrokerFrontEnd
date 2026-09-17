@@ -80,10 +80,7 @@ export const AuthProvider = ({ children }) => {
                 const token = localStorage.getItem("token");
 
                 /*
-                No token = don't call /auth/me.
-                This prevents a new visitor from getting:
-
-                "You are not logged in."
+                No token = no authenticated session.
                 */
 
                 if (!token) {
@@ -120,29 +117,99 @@ export const AuthProvider = ({ children }) => {
                 response.data
             );
 
+            /*
+            ==========================================
+            ACCESS TOKEN
+            ==========================================
+            */
+
             const accessToken =
                 response.data?.accessToken ||
                 response.data?.token;
 
-            if (accessToken) {
-                localStorage.setItem(
-                    "token",
-                    accessToken
+            if (!accessToken) {
+                throw new Error(
+                    "Login succeeded but no access token was returned."
                 );
             }
+
+            /*
+            Store the access token.
+            */
+
+            localStorage.setItem(
+                "token",
+                accessToken
+            );
+
+            /*
+            ==========================================
+            CSRF TOKEN
+            ==========================================
+            */
+
+            const csrfToken =
+                response.data?.csrfToken;
+
+            if (csrfToken) {
+                localStorage.setItem(
+                    "csrfToken",
+                    csrfToken
+                );
+            }
+
+            /*
+            ==========================================
+            USER
+            ==========================================
+            */
 
             const loggedInUser =
                 response.data?.data?.user ||
                 response.data?.user ||
                 null;
 
-            setUser(loggedInUser);
-
             if (!loggedInUser) {
-                await getCurrentUser();
+                /*
+                The login succeeded but the backend
+                didn't return a user.
+
+                Try /auth/me as a fallback.
+                */
+
+                const currentUser =
+                    await getCurrentUser();
+
+                if (!currentUser) {
+                    throw new Error(
+                        "Login succeeded but user information could not be loaded."
+                    );
+                }
+
+                return currentUser;
             }
 
-            return response.data;
+            /*
+            Store authenticated user in React state.
+            */
+
+            setUser(loggedInUser);
+
+            /*
+            IMPORTANT:
+            login() returns the USER, not the entire
+            backend response.
+
+            This allows Login.jsx to simply do:
+
+            const user = await login(form);
+
+            if (user.role === "admin") {
+                navigate("/adminDashboard");
+            }
+            */
+
+            return loggedInUser;
 
         } catch (error) {
             console.error(
@@ -152,6 +219,7 @@ export const AuthProvider = ({ children }) => {
 
             throw new Error(
                 error.response?.data?.message ||
+                error.message ||
                 "Login failed."
             );
         }
@@ -168,8 +236,8 @@ export const AuthProvider = ({ children }) => {
             /*
             Signup ONLY creates the account.
 
-            It does NOT call /auth/me.
-            It does NOT log the user in.
+            It does NOT automatically authenticate
+            the user.
             */
 
             const response = await api.post(
@@ -195,8 +263,9 @@ export const AuthProvider = ({ children }) => {
     const refreshSession = async () => {
         try {
             /*
-            Browser automatically sends the HTTP-only
-            refreshToken cookie because api.js has:
+            The browser automatically sends the
+            HTTP-only refreshToken cookie because
+            api.js should use:
 
             withCredentials: true
             */
@@ -204,6 +273,10 @@ export const AuthProvider = ({ children }) => {
             const response = await api.post(
                 "/auth/refresh"
             );
+
+            /*
+            Get new access token.
+            */
 
             const accessToken =
                 response.data?.accessToken ||
@@ -221,10 +294,26 @@ export const AuthProvider = ({ children }) => {
             );
 
             /*
-            Now retrieve the authenticated user.
+            The refresh endpoint also returns a
+            new CSRF token.
+            */
+
+            const csrfToken =
+                response.data?.csrfToken;
+
+            if (csrfToken) {
+                localStorage.setItem(
+                    "csrfToken",
+                    csrfToken
+                );
+            }
+
+            /*
+            Load authenticated user.
             */
 
             return await getCurrentUser();
+
         } catch (error) {
             console.error(
                 "Session refresh failed:",
@@ -232,6 +321,8 @@ export const AuthProvider = ({ children }) => {
             );
 
             localStorage.removeItem("token");
+            localStorage.removeItem("csrfToken");
+
             setUser(null);
 
             return null;
@@ -254,6 +345,8 @@ export const AuthProvider = ({ children }) => {
             );
         } finally {
             localStorage.removeItem("token");
+            localStorage.removeItem("csrfToken");
+
             setUser(null);
         }
     };
@@ -274,6 +367,8 @@ export const AuthProvider = ({ children }) => {
             );
         } finally {
             localStorage.removeItem("token");
+            localStorage.removeItem("csrfToken");
+
             setUser(null);
         }
     };

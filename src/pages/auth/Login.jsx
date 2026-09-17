@@ -1,10 +1,10 @@
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 
 const Login = () => {
     const navigate = useNavigate();
-
     const { login } = useAuth();
 
     const [form, setForm] = useState({
@@ -29,14 +29,16 @@ const Login = () => {
         setLoading(true);
 
         try {
+            // login() should return the authenticated user
             const response = await login(form);
 
             /*
-             * If your backend requires 2FA after
-             * password authentication, it should
-             * return an indication that 2FA is required.
+             * 2FA
+             *
+             * If the backend requires 2FA after
+             * password authentication, redirect
+             * to the 2FA page first.
              */
-
             if (
                 response?.requiresTwoFactor ||
                 response?.data?.requiresTwoFactor
@@ -45,9 +47,57 @@ const Login = () => {
                 return;
             }
 
-            navigate("/userDashboard");
+            /*
+             * Get the user returned from AuthContext.
+             *
+             * Depending on how your login() function
+             * returns the response, support both:
+             *
+             * response.role
+             *
+             * and
+             *
+             * response.data.user.role
+             */
+            const user =
+                response?.role
+                    ? response
+                    : response?.data?.user;
+
+            if (!user) {
+                throw new Error(
+                    "Login succeeded, but user information was not returned."
+                );
+            }
+
+            /*
+             * Redirect based on the user's role.
+             */
+            if (user.role === "admin") {
+                navigate("/adminDashboard", {
+                    replace: true,
+                });
+                return;
+            }
+
+            if (user.role === "user") {
+                navigate("/userDashboard", {
+                    replace: true,
+                });
+                return;
+            }
+
+            /*
+             * Unknown role
+             */
+            throw new Error(
+                "Your account has an invalid or unsupported role."
+            );
         } catch (error) {
+            console.error("Login error:", error);
+
             setError(
+                error?.response?.data?.message ||
                 error?.message ||
                 "Unable to login. Please try again."
             );
@@ -128,12 +178,15 @@ const Login = () => {
                         disabled={loading}
                         className="w-full rounded-lg bg-cyan-500 px-4 py-3 font-semibold text-slate-950 transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                        {loading ? "Signing in..." : "Sign In"}
+                        {loading
+                            ? "Signing in..."
+                            : "Sign In"}
                     </button>
                 </form>
 
                 <p className="mt-6 text-center text-sm text-slate-400">
                     Don't have an account?{" "}
+
                     <Link
                         to="/signup"
                         className="text-cyan-400 hover:text-cyan-300"
