@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Icon from "./Icon.jsx";
+import {Link} from "react-router-dom";
 
 const NavBar = () => {
   const [open, setOpen] = useState(false);
@@ -52,19 +53,19 @@ const NavBar = () => {
         {/* ACTIONS */}
 
         <div className="hidden items-center gap-3 sm:flex">
-          <a
-            href="/login"
+          <Link
+            to="/login"
             className="rounded-lg border border-cyan-400/30 px-4 py-2 text-sm text-slate-200 transition hover:border-cyan-300 hover:bg-cyan-400/5"
           >
             Login
-          </a>
+          </Link>
 
-          <a
-            href="/signup"
+          <Link
+            to="/signup"
             className="cyan-button rounded-lg bg-cyan-400 px-5 py-2.5 text-sm font-semibold text-[#02111d] transition hover:bg-cyan-300"
           >
             Get Started
-          </a>
+          </Link>
         </div>
 
         {/* MOBILE BUTTON */}
