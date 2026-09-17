@@ -7,7 +7,7 @@ import {
 
 import api from "../services/api";
 
-const AuthContext = createContext();
+const AuthContext = createContext(null);
 
 /*
 =====================================================
@@ -21,176 +21,6 @@ export const AuthProvider = ({ children }) => {
 
     /*
     =================================================
-    INIT AUTH
-    =================================================
-    */
-
-    const initAuth = async () => {
-        try {
-            /*
-            The backend uses the HTTP-only refreshToken
-            cookie to identify the current session.
-            */
-
-            const response = await api("/auth/me");
-
-            /*
-            Possible backend responses:
-
-            {
-                status: "success",
-                data: {
-                    user: {...}
-                }
-            }
-
-            OR
-
-            {
-                status: "success",
-                data: {...}
-            }
-
-            OR
-
-            {
-                user: {...}
-            }
-            */
-
-            if (response?.data?.user) {
-                setUser(response.data.user);
-            } else if (response?.data) {
-                setUser(response.data);
-            } else if (response?.user) {
-                setUser(response.user);
-            } else {
-                setUser(null);
-            }
-
-        } catch (error) {
-            console.log("Auth initialization failed:", error);
-
-            setUser(null);
-
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    /*
-    =================================================
-    RUN AUTH CHECK WHEN APPLICATION STARTS
-    =================================================
-    */
-
-    useEffect(() => {
-        initAuth();
-    }, []);
-
-    /*
-    =================================================
-    LOGIN
-    =================================================
-    */
-
-    const login = async (credentials) => {
-        try {
-            const response = await api(
-                "/auth/login",
-                {
-                    method: "POST",
-                    data: credentials,
-                }
-            );
-
-            /*
-            Backend may return:
-
-            {
-                status: "success",
-                accessToken: "...",
-                data: {
-                    user: {...}
-                }
-            }
-            */
-
-            if (response?.data?.user) {
-                setUser(response.data.user);
-            } else if (response?.data) {
-                setUser(response.data);
-            } else if (response?.user) {
-                setUser(response.user);
-            }
-
-            return response;
-
-        } catch (error) {
-            throw error;
-        }
-    };
-
-    /*
-    =================================================
-    SIGNUP
-    =================================================
-    */
-
-    const signup = async (userData) => {
-        try {
-            const response = await api(
-                "/auth/signup",
-                {
-                    method: "POST",
-                    data: userData,
-                }
-            );
-
-            return response;
-
-        } catch (error) {
-            throw error;
-        }
-    };
-
-    /*
-    =================================================
-    REFRESH SESSION
-    =================================================
-    */
-
-    const refreshSession = async () => {
-        try {
-            /*
-            Browser automatically sends the
-            HTTP-only refreshToken cookie.
-            */
-
-            await api(
-                "/auth/refresh",
-                {
-                    method: "POST",
-                }
-            );
-
-            /*
-            Get the newly authenticated user.
-            */
-
-            return await initAuth();
-
-        } catch (error) {
-            console.log("Session refresh failed:", error);
-
-            setUser(null);
-
-            return null;
-        }
-    };
-
-    /*
-    =================================================
     GET CURRENT USER
     =================================================
     */
@@ -198,9 +28,13 @@ export const AuthProvider = ({ children }) => {
     const getCurrentUser = async () => {
         const token = localStorage.getItem("token");
 
+        /*
+        No access token means there is no authenticated
+        frontend session to restore.
+        */
+
         if (!token) {
             setUser(null);
-            setLoading(false);
             return null;
         }
 
@@ -221,12 +55,183 @@ export const AuthProvider = ({ children }) => {
                 error.response?.data || error.message
             );
 
+            /*
+            Access token is invalid/expired.
+            Remove it from localStorage.
+            */
+
+            localStorage.removeItem("token");
+
+            setUser(null);
+
+            return null;
+        }
+    };
+
+    /*
+    =================================================
+    INITIALIZE AUTH
+    =================================================
+    */
+
+    useEffect(() => {
+        const initializeAuth = async () => {
+            try {
+                const token = localStorage.getItem("token");
+
+                /*
+                No token = don't call /auth/me.
+                This prevents a new visitor from getting:
+
+                "You are not logged in."
+                */
+
+                if (!token) {
+                    setUser(null);
+                    return;
+                }
+
+                await getCurrentUser();
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        initializeAuth();
+    }, []);
+
+    /*
+    =================================================
+    LOGIN
+    =================================================
+    */
+
+    const login = async (credentials) => {
+        try {
+            const response = await api.post(
+                "/auth/login",
+                credentials
+            );
+
+            /*
+            Backend should return the access token.
+            */
+
+            const accessToken =
+                response.data?.accessToken ||
+                response.data?.token;
+
+            if (accessToken) {
+                localStorage.setItem("token", accessToken);
+            }
+
+            /*
+            Get the authenticated user after login.
+            */
+
+            const loggedInUser =
+                response.data?.data?.user ||
+                response.data?.user ||
+                null;
+
+            setUser(loggedInUser);
+
+            /*
+            If the login response doesn't contain the user,
+            fetch it from /me.
+            */
+
+            if (!loggedInUser) {
+                await getCurrentUser();
+            }
+
+            return response.data;
+        } catch (error) {
+            throw new Error(
+                error.response?.data?.message ||
+                "Login failed."
+            );
+        }
+    };
+
+    /*
+    =================================================
+    SIGNUP
+    =================================================
+    */
+
+    const signup = async (userData) => {
+        try {
+            /*
+            Signup ONLY creates the account.
+
+            It does NOT call /auth/me.
+            It does NOT log the user in.
+            */
+
+            const response = await api.post(
+                "/auth/signup",
+                userData
+            );
+
+            return response.data;
+        } catch (error) {
+            throw new Error(
+                error.response?.data?.message ||
+                "Unable to create account."
+            );
+        }
+    };
+
+    /*
+    =================================================
+    REFRESH SESSION
+    =================================================
+    */
+
+    const refreshSession = async () => {
+        try {
+            /*
+            Browser automatically sends the HTTP-only
+            refreshToken cookie because api.js has:
+
+            withCredentials: true
+            */
+
+            const response = await api.post(
+                "/auth/refresh"
+            );
+
+            const accessToken =
+                response.data?.accessToken ||
+                response.data?.token;
+
+            if (!accessToken) {
+                throw new Error(
+                    "No access token returned from refresh."
+                );
+            }
+
+            localStorage.setItem(
+                "token",
+                accessToken
+            );
+
+            /*
+            Now retrieve the authenticated user.
+            */
+
+            return await getCurrentUser();
+        } catch (error) {
+            console.error(
+                "Session refresh failed:",
+                error.response?.data || error.message
+            );
+
             localStorage.removeItem("token");
             setUser(null);
 
             return null;
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -238,14 +243,14 @@ export const AuthProvider = ({ children }) => {
 
     const logout = async () => {
         try {
-            await api(
-                "/auth/logout",
-                {
-                    method: "POST",
-                }
+            await api.post("/auth/logout");
+        } catch (error) {
+            console.error(
+                "Logout failed:",
+                error.response?.data || error.message
             );
-
         } finally {
+            localStorage.removeItem("token");
             setUser(null);
         }
     };
@@ -258,14 +263,14 @@ export const AuthProvider = ({ children }) => {
 
     const logoutAll = async () => {
         try {
-            await api(
-                "/auth/logout-all",
-                {
-                    method: "POST",
-                }
+            await api.post("/auth/logout-all");
+        } catch (error) {
+            console.error(
+                "Logout all failed:",
+                error.response?.data || error.message
             );
-
         } finally {
+            localStorage.removeItem("token");
             setUser(null);
         }
     };
@@ -304,12 +309,16 @@ USE AUTH
 =====================================================
 */
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+    const context = useContext(AuthContext);
 
-/*
-=====================================================
-DEFAULT EXPORT
-=====================================================
-*/
+    if (!context) {
+        throw new Error(
+            "useAuth must be used inside AuthProvider"
+        );
+    }
+
+    return context;
+};
 
 export default AuthProvider;

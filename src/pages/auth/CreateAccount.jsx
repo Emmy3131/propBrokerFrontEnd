@@ -39,12 +39,8 @@ const Signup = () => {
 
             setSuccess(
                 response?.message ||
-                "Account created successfully. Please verify your email."
+                "Account created successfully. Please check your email to verify your account."
             );
-
-            setTimeout(() => {
-                navigate("/verify-email");
-            }, 1500);
         } catch (error) {
             setError(
                 error?.message ||
