@@ -14,33 +14,45 @@ const VerifyEmail = () => {
 
   useEffect(() => {
     const verifyEmail = async () => {
+      if (!token) {
+        setStatus("error");
+        setMessage("Verification token is missing.");
+        return;
+      }
+
       try {
-        const response = await api(
+        const response = await api.get(
           `/auth/verify-email/${token}`
+        );
+
+        console.log(
+          "Email verification response:",
+          response.data
         );
 
         setStatus("success");
 
         setMessage(
-          response?.message ||
-            "Your email has been verified successfully."
+          response.data?.message ||
+          "Your email has been verified successfully."
         );
+
       } catch (error) {
+        console.error(
+          "Email verification error:",
+          error.response?.data || error.message
+        );
+
         setStatus("error");
 
         setMessage(
-          error?.message ||
-            "Email verification failed."
+          error.response?.data?.message ||
+          "Email verification failed."
         );
       }
     };
 
-    if (token) {
-      verifyEmail();
-    } else {
-      setStatus("error");
-      setMessage("Verification token is missing.");
-    }
+    verifyEmail();
   }, [token]);
 
   return (
