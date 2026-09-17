@@ -60,7 +60,7 @@ function App() {
             USER ROUTES
         ========================== */}
         <Route element={<UserLayout />}>
-          <Route path="/user" element={<h1>User Dashboard</h1>} />
+          <Route path="/userDashboard" element={<h1>User Dashboard</h1>} />
         </Route>
 
       </Routes>

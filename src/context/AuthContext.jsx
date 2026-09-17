@@ -108,26 +108,28 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (credentials) => {
         try {
+            console.log("LOGIN REQUEST:", credentials);
+
             const response = await api.post(
                 "/auth/login",
                 credentials
             );
 
-            /*
-            Backend should return the access token.
-            */
+            console.log(
+                "LOGIN RESPONSE:",
+                response.data
+            );
 
             const accessToken =
                 response.data?.accessToken ||
                 response.data?.token;
 
             if (accessToken) {
-                localStorage.setItem("token", accessToken);
+                localStorage.setItem(
+                    "token",
+                    accessToken
+                );
             }
-
-            /*
-            Get the authenticated user after login.
-            */
 
             const loggedInUser =
                 response.data?.data?.user ||
@@ -136,17 +138,18 @@ export const AuthProvider = ({ children }) => {
 
             setUser(loggedInUser);
 
-            /*
-            If the login response doesn't contain the user,
-            fetch it from /me.
-            */
-
             if (!loggedInUser) {
                 await getCurrentUser();
             }
 
             return response.data;
+
         } catch (error) {
+            console.error(
+                "LOGIN ERROR:",
+                error.response?.data || error.message
+            );
+
             throw new Error(
                 error.response?.data?.message ||
                 "Login failed."

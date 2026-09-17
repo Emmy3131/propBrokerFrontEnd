@@ -45,7 +45,7 @@ const Login = () => {
                 return;
             }
 
-            navigate("/dashboard");
+            navigate("/userDashboard");
         } catch (error) {
             setError(
                 error?.message ||
