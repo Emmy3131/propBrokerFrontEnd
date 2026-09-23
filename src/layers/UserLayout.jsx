@@ -235,13 +235,34 @@ export default function UserLayout() {
 
                   <span>{item.label}</span>
                 </NavLink>
+
+                
               );
             })}
           </div>
+
+          <div className="border-t border-slate-800 p-4 md:hidden">
+          <NavLink
+            to="/"
+            onClick={closeSidebar}
+            className="mb-2 flex items-center gap-3 rounded-lg px-4 py-3 text-sm text-slate-400 hover:bg-slate-800 hover:text-white"
+          >
+            <FaHome />
+            <span>View Website</span>
+          </NavLink>
+
+          <button
+            onClick={handleLogout}
+            className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm text-red-400 hover:bg-red-500/10"
+          >
+            <FaSignOutAlt />
+            <span>Logout</span>
+          </button>
+        </div>
         </nav>
 
         {/* Bottom actions */}
-        <div className="border-t border-slate-800 p-4">
+        <div className="border-t border-slate-800 p-4 hidden">
           <NavLink
             to="/"
             onClick={closeSidebar}
