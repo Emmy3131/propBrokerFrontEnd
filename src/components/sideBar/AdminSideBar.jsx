@@ -210,7 +210,7 @@ const AdminSidebar = ({ sidebarOpen, closeSidebar }) => {
               transition-all duration-200
               hover:bg-danger-500/10
               hover:text-danger-300
-              mb-7
+              mb-12
             "
           >
             <FaSignOutAlt />

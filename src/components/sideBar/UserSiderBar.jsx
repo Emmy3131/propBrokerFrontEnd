@@ -210,6 +210,7 @@ const UserSidebar = ({ sidebarOpen, closeSidebar }) => {
               duration-200
               hover:bg-danger-500/10
               hover:text-danger-300
+              mb-12
             "
           >
             <FaSignOutAlt />
