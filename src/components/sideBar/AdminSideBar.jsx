@@ -174,7 +174,6 @@ const AdminSidebar = ({ sidebarOpen, closeSidebar }) => {
             shrink-0
             border-t border-surface-700
             p-4
-            mb-5
           "
         >
           {/* VIEW WEBSITE */}
@@ -211,6 +210,7 @@ const AdminSidebar = ({ sidebarOpen, closeSidebar }) => {
               transition-all duration-200
               hover:bg-danger-500/10
               hover:text-danger-300
+              mb-7
             "
           >
             <FaSignOutAlt />
