@@ -26,7 +26,12 @@ const AdminSidebar = ({ sidebarOpen, closeSidebar }) => {
       {/* MOBILE OVERLAY */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/60 lg:hidden"
+          className="
+            fixed inset-0 z-40
+            bg-surface-950/80
+            backdrop-blur-sm
+            lg:hidden
+          "
           onClick={closeSidebar}
         />
       )}
@@ -44,8 +49,10 @@ const AdminSidebar = ({ sidebarOpen, closeSidebar }) => {
           flex-col
           overflow-y-auto
           border-r
-          border-slate-200
-          bg-white
+          border-surface-700
+          bg-surface-900
+          shadow-2xl
+          shadow-black/30
           transition-transform
           duration-300
           lg:translate-x-0
@@ -58,41 +65,75 @@ const AdminSidebar = ({ sidebarOpen, closeSidebar }) => {
         `}
       >
         {/* LOGO */}
-        <div className="flex h-20 shrink-0 items-center justify-between border-b border-slate-200 px-6">
+        <div
+          className="
+            flex h-20
+            shrink-0
+            items-center
+            justify-between
+            border-b border-surface-700
+            px-6
+          "
+        >
           <div>
-            <h1 className="text-xl font-bold text-slate-900">
+            <h1 className="text-xl font-bold tracking-tight text-white">
               EmmCore
-              <span className="text-blue-600">Prop</span>
+              <span className="text-brand-400">Prop</span>
             </h1>
 
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-surface-400">
               Admin Dashboard
             </p>
           </div>
 
+          {/* MOBILE CLOSE */}
           <button
             onClick={closeSidebar}
-            className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900 lg:hidden"
+            className="
+              rounded-lg p-2
+              text-surface-400
+              transition-all duration-200
+              hover:bg-surface-800
+              hover:text-brand-400
+              lg:hidden
+            "
+            aria-label="Close sidebar"
           >
             <FaTimes />
           </button>
         </div>
 
         {/* ADMIN PROFILE */}
-        <div className="shrink-0 border-b border-slate-200 p-5">
+        <div
+          className="
+            shrink-0
+            border-b border-surface-700
+            p-5
+          "
+        >
           <div className="flex items-center gap-3">
             {/* AVATAR */}
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-100 text-blue-600">
+            <div
+              className="
+                flex h-11 w-11
+                shrink-0
+                items-center justify-center
+                rounded-full
+                border border-brand-500/30
+                bg-brand-500/10
+                text-brand-400
+              "
+            >
               <FaUserShield />
             </div>
 
             {/* DETAILS */}
             <div className="min-w-0">
-              <p className="truncate font-semibold text-slate-900">
+              <p className="truncate font-semibold text-surface-100">
                 {user?.name || "Administrator"}
               </p>
 
-              <p className="truncate text-xs text-slate-500">
+              <p className="truncate text-xs text-surface-400">
                 {user?.email || "No email"}
               </p>
             </div>
@@ -102,17 +143,17 @@ const AdminSidebar = ({ sidebarOpen, closeSidebar }) => {
           <div className="mt-4 flex items-center gap-2 text-xs">
             {user?.emailVerified ? (
               <>
-                <FaCheckCircle className="text-green-500" />
+                <FaCheckCircle className="text-success-500" />
 
-                <span className="text-green-600">
+                <span className="text-success-500">
                   Verified Administrator
                 </span>
               </>
             ) : (
               <>
-                <FaClock className="text-yellow-500" />
+                <FaClock className="text-warning-500" />
 
-                <span className="text-yellow-600">
+                <span className="text-warning-500">
                   Email Not Verified
                 </span>
               </>
@@ -128,12 +169,28 @@ const AdminSidebar = ({ sidebarOpen, closeSidebar }) => {
         </div>
 
         {/* BOTTOM ACTIONS */}
-        <div className="shrink-0 border-t border-slate-200 p-4">
+        <div
+          className="
+            shrink-0
+            border-t border-surface-700
+            p-4
+          "
+        >
           {/* VIEW WEBSITE */}
           <a
             href="/"
             onClick={closeSidebar}
-            className="mb-2 flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-600 transition hover:bg-blue-50 hover:text-blue-600"
+            className="
+              mb-2
+              flex items-center gap-3
+              rounded-xl
+              px-4 py-3
+              text-sm font-medium
+              text-surface-300
+              transition-all duration-200
+              hover:bg-brand-500/10
+              hover:text-brand-400
+            "
           >
             <FaHome />
 
@@ -143,7 +200,17 @@ const AdminSidebar = ({ sidebarOpen, closeSidebar }) => {
           {/* LOGOUT */}
           <button
             onClick={handleLogout}
-            className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-red-500 transition hover:bg-red-50"
+            className="
+              flex w-full
+              items-center gap-3
+              rounded-xl
+              px-4 py-3
+              text-sm font-medium
+              text-danger-400
+              transition-all duration-200
+              hover:bg-danger-500/10
+              hover:text-danger-300
+            "
           >
             <FaSignOutAlt />
 
