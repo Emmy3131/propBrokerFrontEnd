@@ -17,7 +17,17 @@ const SidebarMenu = ({ onNavigate }) => {
   return (
     <nav className="px-4 py-5">
       {/* MAIN */}
-      <p className="mb-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
+      <p
+        className="
+          mb-3
+          px-3
+          text-xs
+          font-semibold
+          uppercase
+          tracking-wider
+          text-surface-500
+        "
+      >
         Main
       </p>
 
@@ -59,7 +69,18 @@ const SidebarMenu = ({ onNavigate }) => {
       </div>
 
       {/* MONEY */}
-      <p className="mb-3 mt-6 px-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
+      <p
+        className="
+          mb-3
+          mt-6
+          px-3
+          text-xs
+          font-semibold
+          uppercase
+          tracking-wider
+          text-surface-500
+        "
+      >
         Money
       </p>
 
@@ -94,7 +115,18 @@ const SidebarMenu = ({ onNavigate }) => {
       </div>
 
       {/* ACCOUNT */}
-      <p className="mb-3 mt-6 px-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
+      <p
+        className="
+          mb-3
+          mt-6
+          px-3
+          text-xs
+          font-semibold
+          uppercase
+          tracking-wider
+          text-surface-500
+        "
+      >
         Account
       </p>
 

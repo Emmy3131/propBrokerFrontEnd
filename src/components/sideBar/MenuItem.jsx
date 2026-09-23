@@ -10,12 +10,12 @@ const MenuItem = ({ to, icon, title, onClick }) => {
         group
         relative
         flex
+        w-full
         items-center
         gap-3
-        w-full
+        rounded-xl
         px-4
         py-3
-        rounded-xl
         text-sm
         font-medium
         transition-all
@@ -25,16 +25,16 @@ const MenuItem = ({ to, icon, title, onClick }) => {
           isActive
             ? `
               bg-gradient-to-r
-              from-blue-600
-              to-cyan-500
+              from-brand-500
+              to-accent-500
               text-white
-              shadow-md
-              shadow-blue-500/20
+              shadow-lg
+              shadow-brand-500/20
             `
             : `
-              text-slate-600
-              hover:bg-blue-50
-              hover:text-blue-600
+              text-surface-300
+              hover:bg-surface-800
+              hover:text-brand-400
             `
         }
         `
@@ -48,14 +48,18 @@ const MenuItem = ({ to, icon, title, onClick }) => {
               absolute
               left-0
               top-1/2
-              -translate-y-1/2
-              w-1
               h-7
+              w-1
+              -translate-y-1/2
               rounded-r-full
-              bg-cyan-400
-              transition-opacity
+              bg-accent-400
+              transition-all
               duration-200
-              ${isActive ? "opacity-100" : "opacity-0"}
+              ${
+                isActive
+                  ? "opacity-100 shadow-[0_0_10px_rgba(103,232,249,0.7)]"
+                  : "opacity-0"
+              }
             `}
           />
 
@@ -63,19 +67,19 @@ const MenuItem = ({ to, icon, title, onClick }) => {
           <span
             className={`
               flex
+              h-9
+              w-9
+              shrink-0
               items-center
               justify-center
-              w-9
-              h-9
               rounded-lg
-              shrink-0
               transition-all
               duration-200
 
               ${
                 isActive
-                  ? "bg-white/10"
-                  : "group-hover:bg-white/70"
+                  ? "bg-white/10 text-white"
+                  : "text-surface-400 group-hover:bg-brand-500/10 group-hover:text-brand-400"
               }
 
               group-hover:scale-105
