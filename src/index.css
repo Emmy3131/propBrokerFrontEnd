@@ -178,3 +178,92 @@ a {
 ::-webkit-scrollbar-thumb:hover {
   background: #155e75;
 }
+
+
+
+/* =====================================================
+   EMMCORE PROPBROKER DESIGN SYSTEM
+===================================================== */
+
+@theme {
+  /* ================================
+     BRAND
+  ================================= */
+
+  --color-brand-50: #eaf9ff;
+  --color-brand-100: #d5f3ff;
+  --color-brand-200: #b0e9ff;
+  --color-brand-300: #70d9ff;
+  --color-brand-400: #35c9ff;
+  --color-brand-500: #00b8ff;
+  --color-brand-600: #009fe0;
+  --color-brand-700: #0084bd;
+  --color-brand-800: #006b99;
+  --color-brand-900: #045879;
+
+
+  /* ================================
+     ACCENT / CYAN
+  ================================= */
+
+  --color-accent-400: #67e8f9;
+  --color-accent-500: #22d3ee;
+  --color-accent-600: #06b6d4;
+  --color-accent-700: #0891b2;
+
+
+  /* ================================
+     DARK SURFACE
+  ================================= */
+
+  --color-surface-950: #030914;
+  --color-surface-900: #07111f;
+  --color-surface-800: #0b1a2b;
+  --color-surface-700: #123047;
+  --color-surface-600: #1b4059;
+  --color-surface-500: #476579;
+  --color-surface-400: #718b9c;
+  --color-surface-300: #9bb0bd;
+  --color-surface-200: #c5d2da;
+  --color-surface-100: #e7eef2;
+  --color-surface-50: #f5f9fb;
+
+
+  /* ================================
+     SUCCESS / PROFIT
+  ================================= */
+
+  --color-success-400: #4ade80;
+  --color-success-500: #22c55e;
+  --color-success-600: #16a34a;
+  --color-success-700: #15803d;
+
+
+  /* ================================
+     WARNING / PENDING
+  ================================= */
+
+  --color-warning-400: #fbbf24;
+  --color-warning-500: #f59e0b;
+  --color-warning-600: #d97706;
+  --color-warning-700: #b45309;
+
+
+  /* ================================
+     DANGER / LOSS
+  ================================= */
+
+  --color-danger-400: #f87171;
+  --color-danger-500: #ef4444;
+  --color-danger-600: #dc2626;
+  --color-danger-700: #b91c1c;
+
+
+  /* ================================
+     INFO
+  ================================= */
+
+  --color-info-400: #60a5fa;
+  --color-info-500: #3b82f6;
+  --color-info-600: #2563eb;
+}
