@@ -4,7 +4,7 @@ import {
   useParams,
 } from "react-router-dom";
 
-import api from "../../services/api";
+import api from "../../library/api";
 
 const VerifyEmail = () => {
   const { token } = useParams();

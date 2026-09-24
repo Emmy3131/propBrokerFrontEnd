@@ -1,5 +1,5 @@
 import { useState } from "react";
-import api from "../../services/api";
+import api from "../../library/api";
 
 const DisableTwoFactor = () => {
     const [code, setCode] = useState("");

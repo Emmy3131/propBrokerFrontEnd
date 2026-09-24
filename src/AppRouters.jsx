@@ -21,6 +21,9 @@ import TwoFactorSetup from "./pages/auth/SetupTwoFactor";
 //Public Pages
 import Home from "./pages/landing/Home";
 
+//Admin pages
+import AdminDashboard from "./pages/Admin/AdminDashboard";
+
 function App() {
   return (
     <Router>
@@ -53,7 +56,7 @@ function App() {
             ADMIN ROUTES
         ========================== */}
         <Route element={<AdminLayout />}>
-          <Route path="/adminDashboard" element={<h1>Admin Dashboard</h1>} />
+          <Route path="/adminDashboard" element={<AdminDashboard />} />
         </Route>
 
         {/* =========================
