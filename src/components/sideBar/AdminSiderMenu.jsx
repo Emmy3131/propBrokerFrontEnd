@@ -30,7 +30,7 @@ const AdminSidebarMenu = ({ onNavigate }) => {
         />
 
         <MenuItem
-          to="/adminDashboard/users"
+          to="/userManagement"
           title="Users"
           icon={<FaUsers />}
           onClick={onNavigate}

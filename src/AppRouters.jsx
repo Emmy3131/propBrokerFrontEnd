@@ -23,6 +23,7 @@ import Home from "./pages/landing/Home";
 
 //Admin pages
 import AdminDashboard from "./pages/Admin/AdminDashboard";
+import AdminUserManagement from "./pages/Admin/UsersManagement";
 
 function App() {
   return (
@@ -57,6 +58,7 @@ function App() {
         ========================== */}
         <Route element={<AdminLayout />}>
           <Route path="/adminDashboard" element={<AdminDashboard />} />
+          <Route path="/userManagement" element={<AdminUserManagement />} />
         </Route>
 
         {/* =========================
