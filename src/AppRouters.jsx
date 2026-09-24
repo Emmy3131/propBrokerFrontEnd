@@ -25,6 +25,7 @@ import Home from "./pages/landing/Home";
 import AdminDashboard from "./pages/Admin/AdminDashboard";
 import AdminUserManagement from "./pages/Admin/UsersManagement";
 import AdminKycDetails from "./pages/Admin/KYC";
+import AdminUserDetails from "./pages/Admin/UserDetails"
 
 function App() {
   return (
@@ -61,6 +62,7 @@ function App() {
           <Route path="/adminDashboard" element={<AdminDashboard />} />
           <Route path="/userManagement" element={<AdminUserManagement />} />
            <Route path="/admin/users/:userId/kyc" element={<AdminKycDetails />} />
+            <Route path="/admin/users/:userId/details" element={<AdminUserDetails />} />
         </Route>
 
         {/* =========================

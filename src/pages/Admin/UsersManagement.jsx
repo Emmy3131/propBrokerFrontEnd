@@ -354,7 +354,7 @@ const AdminUserManagement = () => {
   const handleViewUser = (userId) => {
     setOpenMenu(null);
 
-    navigate(`/admin/users/${userId}`);
+    navigate(`/admin/users/${userId}/details`);
   };
 
   // =====================================================
