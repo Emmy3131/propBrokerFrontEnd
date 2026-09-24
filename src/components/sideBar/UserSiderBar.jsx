@@ -9,13 +9,19 @@ import {
 
 import { useAuth } from "../../context/AuthContext";
 import SidebarMenu from "../sideBar/SideBar";
+import { useNavigate } from "react-router-dom";
 
 const UserSidebar = ({ sidebarOpen, closeSidebar }) => {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
-  const handleLogout = async () => {
+ const handleLogout = async () => {
     try {
+      // Wait for logout to complete
       await logout();
+
+      // Logout successful → go to login page
+      navigate("/login", { replace: true });
     } catch (error) {
       console.error("Logout failed:", error);
     }
