@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import {AuthProvider} from "./context/AuthContext";
+import { AuthProvider } from "./context/AuthContext";
 
 import GuestLayout from "./layers/GuestLayout";
 import AuthLayout from "./layers/AuthLayout";
@@ -26,53 +26,58 @@ import AdminDashboard from "./pages/Admin/AdminDashboard";
 import AdminUserManagement from "./pages/Admin/UsersManagement";
 import AdminKycDetails from "./pages/Admin/KYC";
 import AdminUserDetails from "./pages/Admin/UserDetails"
+import Deposits from "./pages/Admin/Deposits";
+import AdminDepositDetails from "./pages/Admin/AdminDepositeDetails";
 
 function App() {
   return (
     <Router>
       <AuthProvider>
-      <Routes>
+        <Routes>
 
-        {/* =========================
+          {/* =========================
             GUEST / PUBLIC ROUTES
         ========================== */}
-        <Route element={<GuestLayout />}>
-          <Route path="/" element={<Home />} />
-        </Route>
+          <Route element={<GuestLayout />}>
+            <Route path="/" element={<Home />} />
+          </Route>
 
-        {/* =========================
+          {/* =========================
             AUTHENTICATION ROUTES
         ========================== */}
-        <Route element={<AuthLayout />}>
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/verify-email/:token" element={<VerifyEmail />} />
-          <Route path="/disable-two-factor" element={<DisableTwoFactor />} />
-          <Route path="/resend-verification" element={<ResendVerification />} />
-          <Route path="/two-factor-auth" element={<TwoFactorAuth />} />
-          <Route path="/two-factor-setup" element={<TwoFactorSetup />} />
-        </Route>
+          <Route element={<AuthLayout />}>
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/verify-email/:token" element={<VerifyEmail />} />
+            <Route path="/disable-two-factor" element={<DisableTwoFactor />} />
+            <Route path="/resend-verification" element={<ResendVerification />} />
+            <Route path="/two-factor-auth" element={<TwoFactorAuth />} />
+            <Route path="/two-factor-setup" element={<TwoFactorSetup />} />
+          </Route>
 
-        {/* =========================
+          {/* =========================
             ADMIN ROUTES
         ========================== */}
-        <Route element={<AdminLayout />}>
-          <Route path="/adminDashboard" element={<AdminDashboard />} />
-          <Route path="/userManagement" element={<AdminUserManagement />} />
-           <Route path="/admin/users/:userId/kyc" element={<AdminKycDetails />} />
+          <Route element={<AdminLayout />}>
+            <Route path="/adminDashboard" element={<AdminDashboard />} />
+            <Route path="/userManagement" element={<AdminUserManagement />} />
+            <Route path="/admin/users/:userId/kyc" element={<AdminKycDetails />} />
             <Route path="/admin/users/:userId/details" element={<AdminUserDetails />} />
-        </Route>
+            <Route path="deposits" element={<Deposits />} />
+            <Route path="deposits/:depositId" element={<AdminDepositDetails />} />
+            
+          </Route>
 
-        {/* =========================
+          {/* =========================
             USER ROUTES
         ========================== */}
-        <Route element={<UserLayout />}>
-          <Route path="/userDashboard" element={<h1>User Dashboard</h1>} />
-        </Route>
+          <Route element={<UserLayout />}>
+            <Route path="/userDashboard" element={<h1>User Dashboard</h1>} />
+          </Route>
 
-      </Routes>
+        </Routes>
       </AuthProvider>
     </Router>
   );

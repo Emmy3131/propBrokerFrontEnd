@@ -51,7 +51,7 @@ const AdminSidebarMenu = ({ onNavigate }) => {
 
       <div className="space-y-1">
         <MenuItem
-          to="/adminDashboard/deposits"
+          to="/deposits"
           title="Deposits"
           icon={<FaMoneyBillWave />}
           onClick={onNavigate}
