@@ -100,7 +100,7 @@ const SidebarMenu = ({ onNavigate }) => {
         />
 
         <MenuItem
-          to="/userDashboard/transactions"
+          to="/transactions"
           title="Transactions"
           icon={<FaExchangeAlt />}
           onClick={onNavigate}
