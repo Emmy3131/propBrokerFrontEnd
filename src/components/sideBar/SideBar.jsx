@@ -33,7 +33,7 @@ const SidebarMenu = ({ onNavigate }) => {
 
       <div className="space-y-1">
         <MenuItem
-          to="/userDashboard"
+          to="/user/dashboard"
           title="Dashboard"
           icon={<FaHome />}
           onClick={onNavigate}

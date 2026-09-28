@@ -34,6 +34,9 @@ import AdminWithdrawals from "./pages/Admin/Withdrawals"
 import AdminWithdrawalDetails from "./pages/Admin/AdminWithdrawalDetails";
 
 
+//User Pages
+import UserDashboard from "./pages/users/UserDashoard";
+
 function App() {
   return (
     <Router>
@@ -82,7 +85,7 @@ function App() {
             USER ROUTES
         ========================== */}
           <Route element={<UserLayout />}>
-            <Route path="/userDashboard" element={<h1>User Dashboard</h1>} />
+            <Route path="/user/dashboard" element={<UserDashboard/>} />
             <Route path="/user/profile" element={<Profile />} />
             <Route path="/user/security" element={<Security />} />
           </Route>
