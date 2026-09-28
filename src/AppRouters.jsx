@@ -36,7 +36,7 @@ import AdminWithdrawalDetails from "./pages/Admin/AdminWithdrawalDetails";
 
 //User Pages
 import UserDashboard from "./pages/users/UserDashoard";
-import Transactions from "./pages/user/Transactions";
+import Transactions from "./pages/users/Transactions";
 
 function App() {
   return (
