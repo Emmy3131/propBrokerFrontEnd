@@ -37,7 +37,8 @@ import AdminWithdrawalDetails from "./pages/Admin/AdminWithdrawalDetails";
 //User Pages
 import UserDashboard from "./pages/users/UserDashoard";
 import Transactions from "./pages/users/Transactions";
-import Deposit from "./pages/users/Deposit"
+import Deposit from "./pages/users/Deposit";
+import Withdraw from "./pages/users/Withdrawals";
 
 function App() {
   return (
@@ -92,6 +93,7 @@ function App() {
             <Route path="/user/security" element={<Security />} />
             <Route path="/transactions" element={<Transactions />} />
             <Route path="/user/deposits" element={<Deposit />} />
+            <Route path="/user/withdraw" element={<Withdraw />} />
           </Route>
 
         </Routes>

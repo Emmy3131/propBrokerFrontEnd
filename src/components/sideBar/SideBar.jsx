@@ -93,7 +93,7 @@ const SidebarMenu = ({ onNavigate }) => {
         />
 
         <MenuItem
-          to="/userDashboard/withdrawals"
+          to="/user/withdraw"
           title="Withdrawals"
           icon={<FaWallet />}
           onClick={onNavigate}
