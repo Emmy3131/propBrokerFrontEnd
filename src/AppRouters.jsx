@@ -18,10 +18,13 @@ import ResendVerification from "./pages/auth/ResendVerificationEmail";
 import TwoFactorAuth from "./pages/auth/TwoFactor";
 import TwoFactorSetup from "./pages/auth/SetupTwoFactor";
 import Security from "./pages/Security";
+import TwoFactorAuthentication from "./pages/TwoFactoreAuthentication";
+import SetupTwoFactor from "./pages/SetupFactor";
 
 //Public Pages
 import Home from "./pages/landing/Home";
 import Profile from "./pages/Profile";
+
 
 //Admin pages
 import AdminDashboard from "./pages/Admin/AdminDashboard";
@@ -32,6 +35,7 @@ import Deposits from "./pages/Admin/Deposits";
 import AdminDepositDetails from "./pages/Admin/AdminDepositeDetails";
 import AdminWithdrawals from "./pages/Admin/Withdrawals"
 import AdminWithdrawalDetails from "./pages/Admin/AdminWithdrawalDetails";
+
 
 
 //User Pages
@@ -64,7 +68,7 @@ function App() {
             <Route path="/verify-email/:token" element={<VerifyEmail />} />
             <Route path="/disable-two-factor" element={<DisableTwoFactor />} />
             <Route path="/resend-verification" element={<ResendVerification />} />
-            <Route path="/two-factor-auth" element={<TwoFactorAuth />} />
+            <Route path="/two-factor" element={<TwoFactorAuth />} />
             <Route path="/two-factor-setup" element={<TwoFactorSetup />} />
           </Route>
 
@@ -82,18 +86,21 @@ function App() {
             <Route path="withdrawals/:withdrawalId" element={<AdminWithdrawalDetails />} />
             <Route path="admin/profile" element={<Profile />} />
             <Route path="/admin/security" element={<Security />} />
+            <Route path="/security/2fa/setup" element={<TwoFactorAuthentication />} />
           </Route>
 
           {/* =========================
             USER ROUTES
         ========================== */}
           <Route element={<UserLayout />}>
-            <Route path="/user/dashboard" element={<UserDashboard/>} />
+            <Route path="/user/dashboard" element={<UserDashboard />} />
             <Route path="/user/profile" element={<Profile />} />
             <Route path="/user/security" element={<Security />} />
             <Route path="/transactions" element={<Transactions />} />
             <Route path="/user/deposits" element={<Deposit />} />
             <Route path="/user/withdraw" element={<Withdraw />} />
+            <Route path="/security/2fa/setup" element={<TwoFactorAuthentication />} />
+            <Route path="/setUpFactore" element={<SetupTwoFactor/>}/>
           </Route>
 
         </Routes>

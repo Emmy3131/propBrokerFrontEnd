@@ -46,18 +46,25 @@ export const AuthProvider = ({ children }) => {
                 response.data?.user ||
                 null;
 
+            if (!currentUser) {
+                throw new Error(
+                    "Authenticated user was not returned."
+                );
+            }
+
             setUser(currentUser);
 
             return currentUser;
+
         } catch (error) {
             console.error(
                 "Failed to get current user:",
-                error.response?.data || error.message
+                error.response?.data ||
+                error.message
             );
 
             /*
-            Access token is invalid/expired.
-            Remove it from localStorage.
+            The access token is invalid or expired.
             */
 
             localStorage.removeItem("token");
@@ -70,6 +77,100 @@ export const AuthProvider = ({ children }) => {
 
     /*
     =================================================
+    COMPLETE LOGIN
+    =================================================
+
+    This function is used after successful authentication.
+
+    It is especially important for the 2FA flow because
+    the access token is only issued AFTER 2FA verification.
+    */
+
+    const completeLogin = async (authData) => {
+        const accessToken =
+            authData?.accessToken ||
+            authData?.token;
+
+        if (!accessToken) {
+            throw new Error(
+                "No access token returned."
+            );
+        }
+
+        // Save access token
+        localStorage.setItem(
+            "token",
+            accessToken
+        );
+
+        // Save CSRF token
+        const csrfToken =
+            authData?.csrfToken;
+
+        if (csrfToken) {
+            localStorage.setItem(
+                "csrfToken",
+                csrfToken
+            );
+        }
+
+        /*
+        =====================================================
+        GET USER FROM LOGIN RESPONSE
+        =====================================================
+        */
+
+        let loggedInUser =
+            authData?.data?.user ||
+            authData?.user ||
+            null;
+
+        /*
+        =====================================================
+        IF USER WAS NOT INCLUDED, FETCH /auth/me
+        =====================================================
+        */
+
+        if (!loggedInUser) {
+            loggedInUser = await getCurrentUser();
+        }
+
+        /*
+        =====================================================
+        MAKE SURE USER EXISTS
+        =====================================================
+        */
+
+        if (!loggedInUser) {
+            localStorage.removeItem("token");
+            localStorage.removeItem("csrfToken");
+
+            setUser(null);
+
+            throw new Error(
+                "Authentication succeeded but user information could not be loaded."
+            );
+        }
+
+        /*
+        =====================================================
+        THIS IS THE IMPORTANT PART
+    
+        Update React auth state immediately.
+        =====================================================
+        */
+
+        setUser(loggedInUser);
+
+        console.log(
+            "AUTH USER SET:",
+            loggedInUser
+        );
+
+        return loggedInUser;
+    };
+    /*
+    =================================================
     INITIALIZE AUTH
     =================================================
     */
@@ -77,10 +178,12 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         const initializeAuth = async () => {
             try {
-                const token = localStorage.getItem("token");
+                const token =
+                    localStorage.getItem("token");
 
                 /*
-                No token = no authenticated session.
+                No access token means the user is not
+                authenticated.
                 */
 
                 if (!token) {
@@ -89,6 +192,7 @@ export const AuthProvider = ({ children }) => {
                 }
 
                 await getCurrentUser();
+
             } finally {
                 setLoading(false);
             }
@@ -105,27 +209,52 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (credentials) => {
         try {
-            console.log("LOGIN REQUEST:", credentials);
-
             const response = await api.post(
                 "/auth/login",
                 credentials
             );
 
+            const data = response.data;
+
             console.log(
                 "LOGIN RESPONSE:",
-                response.data
+                data
             );
 
             /*
-            ==========================================
-            ACCESS TOKEN
-            ==========================================
+            =====================================================
+            2FA REQUIRED
+            =====================================================
+            */
+
+            if (
+                data?.requiresTwoFactor === true
+            ) {
+                const challenge =
+                    data?.data?.challenge ||
+                    data?.challenge;
+
+                if (!challenge) {
+                    throw new Error(
+                        "Two-factor authentication is required, but no challenge was returned."
+                    );
+                }
+
+                return {
+                    requiresTwoFactor: true,
+                    challenge,
+                };
+            }
+
+            /*
+            =====================================================
+            NORMAL LOGIN
+            =====================================================
             */
 
             const accessToken =
-                response.data?.accessToken ||
-                response.data?.token;
+                data?.accessToken ||
+                data?.token;
 
             if (!accessToken) {
                 throw new Error(
@@ -134,87 +263,23 @@ export const AuthProvider = ({ children }) => {
             }
 
             /*
-            Store the access token.
-            */
-
-            localStorage.setItem(
-                "token",
-                accessToken
-            );
-
-            /*
-            ==========================================
-            CSRF TOKEN
-            ==========================================
-            */
-
-            const csrfToken =
-                response.data?.csrfToken;
-
-            if (csrfToken) {
-                localStorage.setItem(
-                    "csrfToken",
-                    csrfToken
-                );
-            }
-
-            /*
-            ==========================================
-            USER
-            ==========================================
+            IMPORTANT:
+            completeLogin updates `user` immediately.
             */
 
             const loggedInUser =
-                response.data?.data?.user ||
-                response.data?.user ||
-                null;
+                await completeLogin(data);
 
-            if (!loggedInUser) {
-                /*
-                The login succeeded but the backend
-                didn't return a user.
-
-                Try /auth/me as a fallback.
-                */
-
-                const currentUser =
-                    await getCurrentUser();
-
-                if (!currentUser) {
-                    throw new Error(
-                        "Login succeeded but user information could not be loaded."
-                    );
-                }
-
-                return currentUser;
-            }
-
-            /*
-            Store authenticated user in React state.
-            */
-
-            setUser(loggedInUser);
-
-            /*
-            IMPORTANT:
-            login() returns the USER, not the entire
-            backend response.
-
-            This allows Login.jsx to simply do:
-
-            const user = await login(form);
-
-            if (user.role === "admin") {
-                navigate("/adminDashboard");
-            }
-            */
-
-            return loggedInUser;
+            return {
+                requiresTwoFactor: false,
+                user: loggedInUser,
+            };
 
         } catch (error) {
             console.error(
                 "LOGIN ERROR:",
-                error.response?.data || error.message
+                error.response?.data ||
+                error.message
             );
 
             throw new Error(
@@ -234,7 +299,7 @@ export const AuthProvider = ({ children }) => {
     const signup = async (userData) => {
         try {
             /*
-            Signup ONLY creates the account.
+            Signup only creates the account.
 
             It does NOT automatically authenticate
             the user.
@@ -246,6 +311,7 @@ export const AuthProvider = ({ children }) => {
             );
 
             return response.data;
+
         } catch (error) {
             throw new Error(
                 error.response?.data?.message ||
@@ -263,20 +329,19 @@ export const AuthProvider = ({ children }) => {
     const refreshSession = async () => {
         try {
             /*
-            The browser automatically sends the
-            HTTP-only refreshToken cookie because
-            api.js should use:
-
-            withCredentials: true
+            The browser sends the HTTP-only refresh
+            token cookie automatically because api.js
+            should use withCredentials: true.
             */
 
             const response = await api.post(
                 "/auth/refresh"
             );
 
-            /*
-            Get new access token.
-            */
+            console.log(
+                "REFRESH RESPONSE:",
+                response.data
+            );
 
             const accessToken =
                 response.data?.accessToken ||
@@ -288,40 +353,30 @@ export const AuthProvider = ({ children }) => {
                 );
             }
 
-            localStorage.setItem(
-                "token",
-                accessToken
-            );
-
             /*
-            The refresh endpoint also returns a
-            new CSRF token.
+            Store the new access token and restore
+            the authenticated user.
             */
 
-            const csrfToken =
-                response.data?.csrfToken;
-
-            if (csrfToken) {
-                localStorage.setItem(
-                    "csrfToken",
-                    csrfToken
+            const currentUser =
+                await completeLogin(
+                    response.data
                 );
-            }
 
-            /*
-            Load authenticated user.
-            */
-
-            return await getCurrentUser();
+            return currentUser;
 
         } catch (error) {
             console.error(
                 "Session refresh failed:",
-                error.response?.data || error.message
+                error.response?.data ||
+                error.message
             );
 
             localStorage.removeItem("token");
-            localStorage.removeItem("csrfToken");
+
+            localStorage.removeItem(
+                "csrfToken"
+            );
 
             setUser(null);
 
@@ -337,17 +392,32 @@ export const AuthProvider = ({ children }) => {
 
     const logout = async () => {
         try {
-            await api.post("/auth/logout");
+            await api.post(
+                "/auth/logout"
+            );
+
         } catch (error) {
             console.error(
                 "Logout failed:",
-                error.response?.data || error.message
+                error.response?.data ||
+                error.message
             );
+
         } finally {
-            localStorage.removeItem("token");
-            localStorage.removeItem("csrfToken");
+            /*
+            Always clear the local authentication
+            state even if the backend request fails.
+            */
+
+            localStorage.removeItem(
+                "token"
+            );
+
+            localStorage.removeItem(
+                "csrfToken"
+            );
+
             setUser(null);
-        
         }
     };
 
@@ -359,15 +429,25 @@ export const AuthProvider = ({ children }) => {
 
     const logoutAll = async () => {
         try {
-            await api.post("/auth/logout-all");
+            await api.post(
+                "/auth/logout-all"
+            );
+
         } catch (error) {
             console.error(
                 "Logout all failed:",
-                error.response?.data || error.message
+                error.response?.data ||
+                error.message
             );
+
         } finally {
-            localStorage.removeItem("token");
-            localStorage.removeItem("csrfToken");
+            localStorage.removeItem(
+                "token"
+            );
+
+            localStorage.removeItem(
+                "csrfToken"
+            );
 
             setUser(null);
         }
@@ -382,15 +462,41 @@ export const AuthProvider = ({ children }) => {
     return (
         <AuthContext.Provider
             value={{
+                /*
+                User state
+                */
+
                 user,
+
+                /*
+                Initial authentication loading state
+                */
+
                 loading,
-                isAuthenticated: Boolean(user),
+
+                /*
+                Authenticated only after a user has
+                actually been loaded.
+                */
+
+                isAuthenticated:
+                    Boolean(user),
+
+                /*
+                Authentication methods
+                */
 
                 login,
+                completeLogin,
+
                 signup,
 
                 logout,
                 logoutAll,
+
+                /*
+                Session methods
+                */
 
                 getCurrentUser,
                 refreshSession,
@@ -408,7 +514,8 @@ USE AUTH
 */
 
 export const useAuth = () => {
-    const context = useContext(AuthContext);
+    const context =
+        useContext(AuthContext);
 
     if (!context) {
         throw new Error(

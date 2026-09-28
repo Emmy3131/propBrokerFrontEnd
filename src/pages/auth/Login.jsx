@@ -1,10 +1,11 @@
-
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 
 const Login = () => {
     const navigate = useNavigate();
+    const location = useLocation();
+
     const { login } = useAuth();
 
     const [form, setForm] = useState({
@@ -29,40 +30,54 @@ const Login = () => {
         setLoading(true);
 
         try {
-            // login() should return the authenticated user
+            /*
+            =================================================
+            LOGIN
+            =================================================
+            */
+
             const response = await login(form);
 
+            console.log("LOGIN RESULT:", response);
+
             /*
-             * 2FA
-             *
-             * If the backend requires 2FA after
-             * password authentication, redirect
-             * to the 2FA page first.
-             */
-            if (
-                response?.requiresTwoFactor ||
-                response?.data?.requiresTwoFactor
-            ) {
-                navigate("/two-factor");
+            =================================================
+            TWO-FACTOR AUTHENTICATION REQUIRED
+            =================================================
+            */
+
+            if (response?.requiresTwoFactor) {
+                if (!response?.challenge) {
+                    throw new Error(
+                        "Two-factor authentication is required, but no challenge was returned."
+                    );
+                }
+
+                /*
+                The access token does NOT exist yet.
+
+                We pass the temporary challenge to the
+                2FA verification page.
+                */
+
+                navigate("/two-factor", {
+                    replace: true,
+                    state: {
+                        challenge: response.challenge,
+                        email: form.email,
+                    },
+                });
+
                 return;
             }
 
             /*
-             * Get the user returned from AuthContext.
-             *
-             * Depending on how your login() function
-             * returns the response, support both:
-             *
-             * response.role
-             *
-             * and
-             *
-             * response.data.user.role
-             */
-            const user =
-                response?.role
-                    ? response
-                    : response?.data?.user;
+            =================================================
+            NORMAL LOGIN
+            =================================================
+            */
+
+            const user = response?.user;
 
             if (!user) {
                 throw new Error(
@@ -71,28 +86,43 @@ const Login = () => {
             }
 
             /*
-             * Redirect based on the user's role.
-             */
+            =================================================
+            ADMIN
+            =================================================
+            */
+
             if (user.role === "admin") {
                 navigate("/adminDashboard", {
                     replace: true,
                 });
+
                 return;
             }
+
+            /*
+            =================================================
+            NORMAL USER
+            =================================================
+            */
 
             if (user.role === "user") {
                 navigate("/user/dashboard", {
                     replace: true,
                 });
+
                 return;
             }
 
             /*
-             * Unknown role
-             */
+            =================================================
+            UNKNOWN ROLE
+            =================================================
+            */
+
             throw new Error(
                 "Your account has an invalid or unsupported role."
             );
+
         } catch (error) {
             console.error("Login error:", error);
 
