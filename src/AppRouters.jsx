@@ -28,6 +28,9 @@ import AdminKycDetails from "./pages/Admin/KYC";
 import AdminUserDetails from "./pages/Admin/UserDetails"
 import Deposits from "./pages/Admin/Deposits";
 import AdminDepositDetails from "./pages/Admin/AdminDepositeDetails";
+import AdminWithdrawals from "./pages/Admin/Withdrawals"
+import AdminWithdrawalDetails from "./pages/Admin/AdminWithdrawalDetails";
+import Profile from "./pages/Admin/Profile";
 
 function App() {
   return (
@@ -67,7 +70,10 @@ function App() {
             <Route path="/admin/users/:userId/details" element={<AdminUserDetails />} />
             <Route path="deposits" element={<Deposits />} />
             <Route path="deposits/:depositId" element={<AdminDepositDetails />} />
-            
+            <Route path="/adminWihdrawal" element={<AdminWithdrawals />} />
+            <Route path="withdrawals/:withdrawalId" element={<AdminWithdrawalDetails />} />
+            <Route path="profile" element={<Profile />}
+            />
           </Route>
 
           {/* =========================

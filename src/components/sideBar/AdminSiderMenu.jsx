@@ -58,7 +58,7 @@ const AdminSidebarMenu = ({ onNavigate }) => {
         />
 
         <MenuItem
-          to="/adminDashboard/withdrawals"
+          to="/adminWihdrawal"
           title="Withdrawals"
           icon={<FaWallet />}
           onClick={onNavigate}
@@ -93,8 +93,8 @@ const AdminSidebarMenu = ({ onNavigate }) => {
         />
 
         <MenuItem
-          to="/adminDashboard/settings"
-          title="Settings"
+          to="/profile"
+          title="Profile"
           icon={<FaCog />}
           onClick={onNavigate}
         />
