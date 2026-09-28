@@ -93,7 +93,7 @@ const AdminSidebarMenu = ({ onNavigate }) => {
         />
 
         <MenuItem
-          to="/profile"
+          to="/admin/profile"
           title="Profile"
           icon={<FaCog />}
           onClick={onNavigate}

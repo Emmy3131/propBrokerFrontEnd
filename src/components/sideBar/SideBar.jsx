@@ -139,18 +139,12 @@ const SidebarMenu = ({ onNavigate }) => {
         />
 
         <MenuItem
-          to="/userDashboard/profile"
+          to="/user/profile"
           title="Profile"
           icon={<FaUser />}
           onClick={onNavigate}
         />
 
-        <MenuItem
-          to="/userDashboard/settings"
-          title="Settings"
-          icon={<FaCog />}
-          onClick={onNavigate}
-        />
       </div>
     </nav>
   );

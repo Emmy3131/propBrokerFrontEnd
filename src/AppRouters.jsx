@@ -17,9 +17,11 @@ import DisableTwoFactor from "./pages/auth/DisableTwoFactor";
 import ResendVerification from "./pages/auth/ResendVerificationEmail";
 import TwoFactorAuth from "./pages/auth/TwoFactor";
 import TwoFactorSetup from "./pages/auth/SetupTwoFactor";
+import Security from "./pages/Security";
 
 //Public Pages
 import Home from "./pages/landing/Home";
+import Profile from "./pages/Profile";
 
 //Admin pages
 import AdminDashboard from "./pages/Admin/AdminDashboard";
@@ -30,7 +32,7 @@ import Deposits from "./pages/Admin/Deposits";
 import AdminDepositDetails from "./pages/Admin/AdminDepositeDetails";
 import AdminWithdrawals from "./pages/Admin/Withdrawals"
 import AdminWithdrawalDetails from "./pages/Admin/AdminWithdrawalDetails";
-import Profile from "./pages/Admin/Profile";
+
 
 function App() {
   return (
@@ -72,8 +74,8 @@ function App() {
             <Route path="deposits/:depositId" element={<AdminDepositDetails />} />
             <Route path="/adminWihdrawal" element={<AdminWithdrawals />} />
             <Route path="withdrawals/:withdrawalId" element={<AdminWithdrawalDetails />} />
-            <Route path="profile" element={<Profile />}
-            />
+            <Route path="admin/profile" element={<Profile />} />
+            <Route path="/admin/security" element={<Security />} />
           </Route>
 
           {/* =========================
@@ -81,6 +83,8 @@ function App() {
         ========================== */}
           <Route element={<UserLayout />}>
             <Route path="/userDashboard" element={<h1>User Dashboard</h1>} />
+            <Route path="/user/profile" element={<Profile />} />
+            <Route path="/user/security" element={<Security />} />
           </Route>
 
         </Routes>
