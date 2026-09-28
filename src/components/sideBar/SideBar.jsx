@@ -86,7 +86,7 @@ const SidebarMenu = ({ onNavigate }) => {
 
       <div className="space-y-1">
         <MenuItem
-          to="/userDashboard/deposits"
+          to="/user/deposits"
           title="Deposits"
           icon={<FaMoneyBillWave />}
           onClick={onNavigate}

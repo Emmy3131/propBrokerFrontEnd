@@ -37,6 +37,7 @@ import AdminWithdrawalDetails from "./pages/Admin/AdminWithdrawalDetails";
 //User Pages
 import UserDashboard from "./pages/users/UserDashoard";
 import Transactions from "./pages/users/Transactions";
+import Deposit from "./pages/users/Deposit"
 
 function App() {
   return (
@@ -89,7 +90,8 @@ function App() {
             <Route path="/user/dashboard" element={<UserDashboard/>} />
             <Route path="/user/profile" element={<Profile />} />
             <Route path="/user/security" element={<Security />} />
-            <Route path="transactions" element={<Transactions />} />
+            <Route path="/transactions" element={<Transactions />} />
+            <Route path="/user/deposits" element={<Deposit />} />
           </Route>
 
         </Routes>
