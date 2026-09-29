@@ -43,6 +43,7 @@ import UserDashboard from "./pages/users/UserDashoard";
 import Transactions from "./pages/users/Transactions";
 import Deposit from "./pages/users/Deposit";
 import Withdraw from "./pages/users/Withdrawals";
+import KYC from "./pages/users/KYC";
 
 function App() {
   return (
@@ -101,6 +102,7 @@ function App() {
             <Route path="/user/withdraw" element={<Withdraw />} />
             <Route path="/security/2fa/setup" element={<TwoFactorAuthentication />} />
             <Route path="/setUpFactore" element={<SetupTwoFactor/>}/>
+            <Route path="/user/kyc" element={<KYC/>}/>
           </Route>
 
         </Routes>

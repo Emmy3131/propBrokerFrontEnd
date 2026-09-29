@@ -138,6 +138,13 @@ const SidebarMenu = ({ onNavigate }) => {
           onClick={onNavigate}
         />
 
+         <MenuItem
+          to="/user/kyc"
+          title="KYC"
+          icon={<FaUser />}
+          onClick={onNavigate}
+        />
+
         <MenuItem
           to="/user/profile"
           title="Profile"
