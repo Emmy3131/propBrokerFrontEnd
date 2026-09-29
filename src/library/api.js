@@ -22,16 +22,46 @@ api.interceptors.request.use(
     const token = localStorage.getItem("token");
     const csrfToken = localStorage.getItem("csrfToken");
 
+    /*
+    =====================================================
+    AUTHORIZATION
+    =====================================================
+    */
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    /*
+    =====================================================
+    CSRF TOKEN
+    =====================================================
+    */
 
     if (csrfToken) {
       config.headers["X-CSRF-Token"] = csrfToken;
     }
 
+    /*
+    =====================================================
+    FORMDATA REQUESTS
+    =====================================================
+
+    Let the browser/Axios automatically create:
+
+    Content-Type: multipart/form-data; boundary=...
+
+    Do NOT manually set it.
+    */
+
+    if (config.data instanceof FormData) {
+      delete config.headers["Content-Type"];
+      delete config.headers["content-type"];
+    }
+
     return config;
   },
+
   (error) => Promise.reject(error),
 );
 

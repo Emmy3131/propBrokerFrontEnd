@@ -9,13 +9,13 @@ import {
     FaFileCircleCheck,
     FaFileImage,
     FaIdCard,
-    FaInfo,
     FaArrowsRotate,
     FaShieldHalved,
     FaXmark,
     FaTriangleExclamation,
     FaUser,
     FaUserCheck,
+    FaCircleCheck,
 } from "react-icons/fa6";
 
 import api from "../../library/api";
@@ -30,31 +30,36 @@ const StatusBadge = ({ status }) => {
     const config = {
         not_started: {
             label: "Not Started",
-            className: "bg-slate-100 text-slate-700 border-slate-200",
-            icon: <FaInfoCircle />,
+            className:
+                "border-surface-600 bg-surface-800 text-surface-300",
+            icon: <FaArrowsRotate />,
         },
 
         pending: {
             label: "Pending",
-            className: "bg-amber-50 text-amber-700 border-amber-200",
+            className:
+                "border-warning-500/30 bg-warning-500/10 text-warning-400",
             icon: <FaClock />,
         },
 
         under_review: {
             label: "Under Review",
-            className: "bg-blue-50 text-blue-700 border-blue-200",
+            className:
+                "border-info-500/30 bg-info-500/10 text-info-400",
             icon: <FaShieldHalved />,
         },
 
         verified: {
             label: "Verified",
-            className: "bg-emerald-50 text-emerald-700 border-emerald-200",
-            icon: <FaCheckCircle />,
+            className:
+                "border-success-500/30 bg-success-500/10 text-success-400",
+            icon: <FaCircleCheck />,
         },
 
         rejected: {
             label: "Rejected",
-            className: "bg-red-50 text-red-700 border-red-200",
+            className:
+                "border-danger-500/30 bg-danger-500/10 text-danger-400",
             icon: <FaTriangleExclamation />,
         },
     };
@@ -66,6 +71,7 @@ const StatusBadge = ({ status }) => {
             className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold ${current.className}`}
         >
             {current.icon}
+
             {current.label}
         </span>
     );
@@ -80,11 +86,11 @@ INFO ITEM
 const InfoItem = ({ label, value }) => {
     return (
         <div>
-            <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-400">
+            <p className="mb-1 text-xs font-medium uppercase tracking-wide text-surface-400">
                 {label}
             </p>
 
-            <p className="break-words text-sm font-semibold text-slate-800">
+            <p className="break-words text-sm font-semibold text-surface-100">
                 {value || "Not provided"}
             </p>
         </div>
@@ -99,14 +105,14 @@ SECTION
 
 const Section = ({ title, icon, children, right }) => {
     return (
-        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div className="flex flex-col gap-3 border-b border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <section className="overflow-hidden rounded-2xl border border-surface-700 bg-surface-900 shadow-lg shadow-black/10">
+            <div className="flex flex-col gap-3 border-b border-surface-700 bg-surface-800/50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-brand-500/20 bg-brand-500/10 text-brand-400">
                         {icon}
                     </div>
 
-                    <h2 className="text-base font-bold text-slate-900">
+                    <h2 className="text-base font-bold text-surface-100">
                         {title}
                     </h2>
                 </div>
@@ -133,12 +139,11 @@ const DocumentCard = ({
     onView,
 }) => {
     return (
-        <div className="overflow-hidden rounded-2xl border border-surface-700  bg-brand-500/10">
-            <div className="flex h-48 items-center justify-center  bg-brand-500/10">
+        <div className="overflow-hidden rounded-2xl border border-surface-700 bg-surface-800">
+            <div className="flex h-48 items-center justify-center bg-surface-950/60">
                 {loading ? (
                     <div className="text-center">
-                        <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-4 border-surface-700
-              border-t-brand-500" />
+                        <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-4 border-surface-700 border-t-brand-500" />
 
                         <p className="text-sm text-surface-400">
                             Loading document...
@@ -146,15 +151,19 @@ const DocumentCard = ({
                     </div>
                 ) : available ? (
                     <div className="text-center">
-                        <FaFileImage className="mx-auto mb-3 text-5xl text-surface-500" />
+                        <FaFileImage className="mx-auto mb-3 text-5xl text-brand-400" />
 
-                        <p className="text-sm font-semibold text-slate-700">
+                        <p className="text-sm font-semibold text-surface-200">
                             Document available
+                        </p>
+
+                        <p className="mt-1 text-xs text-success-400">
+                            Securely stored
                         </p>
                     </div>
                 ) : (
                     <div className="px-4 text-center">
-                        <FaFileImage className="mx-auto mb-3 text-4xl text-surface-400" />
+                        <FaFileImage className="mx-auto mb-3 text-4xl text-surface-500" />
 
                         <p className="text-sm font-semibold text-surface-400">
                             Not uploaded
@@ -163,8 +172,8 @@ const DocumentCard = ({
                 )}
             </div>
 
-            <div className="p-4">
-                <h3 className="mb-3 text-sm font-bold text-slate-900">
+            <div className="border-t border-surface-700 p-4">
+                <h3 className="mb-3 text-sm font-bold text-surface-100">
                     {title}
                 </h3>
 
@@ -173,7 +182,7 @@ const DocumentCard = ({
                         type="button"
                         onClick={() => onView(documentType)}
                         disabled={loading}
-                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-semibold text-surface-950 transition hover:bg-brand-400 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                         <FaCloudArrowDown />
 
@@ -183,7 +192,7 @@ const DocumentCard = ({
                     <button
                         type="button"
                         disabled
-                        className="w-full cursor-not-allowed rounded-xl  bg-brand-500/10 px-4 py-2.5 text-sm font-semibold text-slate-400"
+                        className="w-full cursor-not-allowed rounded-xl border border-surface-700 bg-surface-900 px-4 py-2.5 text-sm font-semibold text-surface-500"
                     >
                         Document Unavailable
                     </button>
@@ -227,31 +236,36 @@ const AdminKycDetails = () => {
     =====================================================
     */
 
-    const fetchKyc = useCallback(async (showRefresh = false) => {
-        try {
-            if (showRefresh) {
-                setRefreshing(true);
-            } else {
-                setLoading(true);
+    const fetchKyc = useCallback(
+        async (showRefresh = false) => {
+            try {
+                if (showRefresh) {
+                    setRefreshing(true);
+                } else {
+                    setLoading(true);
+                }
+
+                setError("");
+
+                const response = await api.get(
+                    `/kyc/admin/user/${userId}`,
+                );
+
+                setKyc(response.data?.data?.kyc || null);
+            } catch (err) {
+                console.error("Failed to fetch KYC:", err);
+
+                setError(
+                    err.response?.data?.message ||
+                    "Unable to load this user's KYC information.",
+                );
+            } finally {
+                setLoading(false);
+                setRefreshing(false);
             }
-
-            setError("");
-
-            const response = await api.get(`/kyc/admin/user/${userId}`);
-
-            setKyc(response.data?.data?.kyc || null);
-        } catch (err) {
-            console.error("Failed to fetch KYC:", err);
-
-            setError(
-                err.response?.data?.message ||
-                "Unable to load this user's KYC information."
-            );
-        } finally {
-            setLoading(false);
-            setRefreshing(false);
-        }
-    }, [userId]);
+        },
+        [userId],
+    );
 
     useEffect(() => {
         fetchKyc();
@@ -279,13 +293,15 @@ const AdminKycDetails = () => {
             }
 
             const response = await api.get(
-                `/kyc/admin/${kycId}/document/${documentType}`
+                `/kyc/admin/${kycId}/document/${documentType}`,
             );
 
             const url = response.data?.data?.url;
 
             if (!url) {
-                throw new Error("Secure document URL was not returned.");
+                throw new Error(
+                    "Secure document URL was not returned.",
+                );
             }
 
             window.open(url, "_blank", "noopener,noreferrer");
@@ -295,7 +311,7 @@ const AdminKycDetails = () => {
             setDocumentError(
                 err.response?.data?.message ||
                 err.message ||
-                "Unable to open the document."
+                "Unable to open the document.",
             );
         } finally {
             setDocumentLoading((prev) => ({
@@ -315,7 +331,7 @@ const AdminKycDetails = () => {
         if (!kyc?._id) return;
 
         const confirmed = window.confirm(
-            "Are you sure you want to approve this KYC application?"
+            "Are you sure you want to approve this KYC application?",
         );
 
         if (!confirmed) return;
@@ -336,7 +352,7 @@ const AdminKycDetails = () => {
 
             setError(
                 err.response?.data?.message ||
-                "Unable to approve this KYC application."
+                "Unable to approve this KYC application.",
             );
         } finally {
             setActionLoading(false);
@@ -377,7 +393,7 @@ const AdminKycDetails = () => {
 
             setError(
                 err.response?.data?.message ||
-                "Unable to reject this KYC application."
+                "Unable to reject this KYC application.",
             );
         } finally {
             setActionLoading(false);
@@ -413,15 +429,16 @@ const AdminKycDetails = () => {
 
     if (loading) {
         return (
-            <div className="min-h-screen  bg-brand-500/10 p-4 sm:p-6 lg:p-8">
+            <div className="min-h-screen bg-surface-950 p-4 sm:p-6 lg:p-8">
                 <div className="mx-auto max-w-7xl">
-                    <div className="mb-6 h-8 w-48 animate-pulse rounded-lg  bg-brand-500/10" />
+                    <div className="mb-6 h-8 w-48 animate-pulse rounded-lg bg-surface-800" />
 
-                    <div className="mb-6 h-32 animate-pulse rounded-2xl  bg-brand-500/10 shadow-sm" />
+                    <div className="mb-6 h-32 animate-pulse rounded-2xl bg-surface-800" />
 
                     <div className="grid gap-6 lg:grid-cols-2">
-                        <div className="h-72 animate-pulse rounded-2xl  bg-brand-500/10 shadow-sm" />
-                        <div className="h-72 animate-pulse rounded-2xl  bg-brand-500/10 shadow-sm" />
+                        <div className="h-72 animate-pulse rounded-2xl bg-surface-800" />
+
+                        <div className="h-72 animate-pulse rounded-2xl bg-surface-800" />
                     </div>
                 </div>
             </div>
@@ -436,33 +453,35 @@ const AdminKycDetails = () => {
 
     if (error && !kyc) {
         return (
-            <div className="min-h-screen  bg-brand-500/10 p-4 sm:p-6 lg:p-8">
+            <div className="min-h-screen bg-surface-950 p-4 sm:p-6 lg:p-8">
                 <div className="mx-auto max-w-3xl">
                     <button
                         type="button"
                         onClick={() => navigate(-1)}
-                        className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-900"
+                        className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-surface-400 transition hover:text-brand-400"
                     >
                         <FaArrowLeft />
 
                         Back
                     </button>
 
-                    <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center">
-                        <FaTriangleExclamation className="mx-auto mb-3 text-3xl text-red-500" />
+                    <div className="rounded-2xl border border-danger-500/30 bg-danger-500/10 p-6 text-center">
+                        <FaTriangleExclamation className="mx-auto mb-3 text-3xl text-danger-400" />
 
-                        <h2 className="mb-2 text-lg font-bold text-red-800">
+                        <h2 className="mb-2 text-lg font-bold text-danger-300">
                             Unable to load KYC
                         </h2>
 
-                        <p className="mb-5 text-sm text-red-700">{error}</p>
+                        <p className="mb-5 text-sm text-danger-400">
+                            {error}
+                        </p>
 
                         <button
                             type="button"
                             onClick={() => fetchKyc()}
-                            className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-red-700"
+                            className="inline-flex items-center gap-2 rounded-xl bg-brand-500 px-5 py-2.5 text-sm font-semibold text-surface-950 transition hover:bg-brand-400"
                         >
-                            <FaRefresh />
+                            <FaArrowsRotate />
 
                             Retry
                         </button>
@@ -480,28 +499,28 @@ const AdminKycDetails = () => {
 
     if (!kyc) {
         return (
-            <div className="min-h-screen  bg-brand-500/10 p-4 sm:p-6 lg:p-8">
+            <div className="min-h-screen bg-surface-950 p-4 sm:p-6 lg:p-8">
                 <div className="mx-auto max-w-3xl">
                     <button
                         type="button"
                         onClick={() => navigate(-1)}
-                        className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-900"
+                        className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-surface-400 transition hover:text-brand-400"
                     >
                         <FaArrowLeft />
 
                         Back to Users
                     </button>
 
-                    <div className="rounded-2xl border border-slate-200  bg-brand-500/10 p-8 text-center shadow-sm">
-                        <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full  bg-brand-500/10">
-                            <FaIdCard className="text-2xl text-slate-400" />
+                    <div className="rounded-2xl border border-surface-700 bg-surface-900 p-8 text-center shadow-lg">
+                        <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full border border-brand-500/20 bg-brand-500/10">
+                            <FaIdCard className="text-2xl text-brand-400" />
                         </div>
 
-                        <h1 className="mb-2 text-xl font-bold text-surface-300">
+                        <h1 className="mb-2 text-xl font-bold text-surface-100">
                             KYC Not Submitted
                         </h1>
 
-                        <p className="text-sm text-slate-500">
+                        <p className="text-sm text-surface-400">
                             This user has not created a KYC application yet.
                         </p>
                     </div>
@@ -514,457 +533,535 @@ const AdminKycDetails = () => {
 
     const isUnderReview = kyc.status === "under_review";
 
-    const hasFront = Boolean(kyc.documentFront?.storageKey);
-    const hasBack = Boolean(kyc.documentBack?.storageKey);
-    const hasSelfie = Boolean(kyc.selfie?.storageKey);
+    const hasFront = Boolean(
+        kyc.documentFront?.storageKey,
+    );
+
+    const hasBack = Boolean(
+        kyc.documentBack?.storageKey,
+    );
+
+    const hasSelfie = Boolean(
+        kyc.selfie?.storageKey,
+    );
 
     return (
         <>
-            <div className="space-y-6">
-                <div>
-                    {/* HEADER */}
+            <div className="min-h-screen bg-surface-950">
+                <div className="space-y-6">
+                    <div>
+                        {/* HEADER */}
 
-                    <div className="mb-6">
-                        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                            <button
-                                type="button"
-                                onClick={() => navigate(-1)}
-                                className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 transition hover:text-slate-900"
-                            >
-                                <FaArrowLeft />
+                        <div className="mb-6">
+                            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => navigate(-1)}
+                                    className="inline-flex items-center gap-2 text-sm font-semibold text-surface-400 transition hover:text-brand-400"
+                                >
+                                    <FaArrowLeft />
 
-                                Back to Users
-                            </button>
+                                    Back to Users
+                                </button>
 
-                            <button
-                                type="button"
-                                onClick={() => fetchKyc(true)}
-                                disabled={refreshing}
-                                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
-                            >
-                                <FaRefresh className={refreshing ? "animate-spin" : ""} />
+                                <button
+                                    type="button"
+                                    onClick={() => fetchKyc(true)}
+                                    disabled={refreshing}
+                                    className="inline-flex items-center gap-2 rounded-xl border border-surface-700 bg-surface-900 px-4 py-2.5 text-sm font-semibold text-surface-200 shadow-sm transition hover:border-brand-500/40 hover:bg-surface-800 disabled:opacity-50"
+                                >
+                                    <FaArrowsRotate
+                                        className={
+                                            refreshing ? "animate-spin" : ""
+                                        }
+                                    />
 
-                                Refresh
-                            </button>
+                                    Refresh
+                                </button>
+                            </div>
+
+                            <div className="rounded-2xl border border-brand-500/20 bg-surface-900 p-5 shadow-lg shadow-brand-500/5 sm:p-6">
+                                <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border border-brand-500/20 bg-brand-500/10 text-xl font-bold text-brand-400">
+                                            {user?.profileImage ? (
+                                                <img
+                                                    src={user.profileImage}
+                                                    alt={user.name || "User"}
+                                                    className="h-full w-full object-cover"
+                                                />
+                                            ) : (
+                                                user?.name
+                                                    ?.charAt(0)
+                                                    ?.toUpperCase() || (
+                                                    <FaUser />
+                                                )
+                                            )}
+                                        </div>
+
+                                        <div>
+                                            <h1 className="text-xl font-bold text-surface-100 sm:text-2xl">
+                                                {user?.name || "Unknown User"}
+                                            </h1>
+
+                                            <p className="mt-1 text-sm text-surface-400">
+                                                {user?.email ||
+                                                    "No email available"}
+                                            </p>
+
+                                            <p className="mt-1 text-xs text-surface-500">
+                                                KYC ID: {kyc._id}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <StatusBadge status={kyc.status} />
+                                </div>
+                            </div>
                         </div>
 
-                        <div className="rounded-2xl bg-slate-900 p-5 text-white shadow-sm sm:p-6">
-                            <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-                                <div className="flex items-center gap-4">
-                                    <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/10 text-xl font-bold">
-                                        {user?.profileImage ? (
-                                            <img
-                                                src={user.profileImage}
-                                                alt={user.name || "User"}
-                                                className="h-full w-full object-cover"
-                                            />
-                                        ) : (
-                                            user?.name?.charAt(0)?.toUpperCase() || <FaUser />
+                        {/* ERROR */}
+
+                        {error && (
+                            <div className="mb-6 flex items-start gap-3 rounded-2xl border border-danger-500/30 bg-danger-500/10 p-4 text-sm text-danger-300">
+                                <FaTriangleExclamation className="mt-0.5 shrink-0" />
+
+                                <span>{error}</span>
+
+                                <button
+                                    type="button"
+                                    onClick={() => setError("")}
+                                    className="ml-auto text-danger-400 transition hover:text-danger-300"
+                                >
+                                    <FaXmark />
+                                </button>
+                            </div>
+                        )}
+
+                        {/* DOCUMENT ERROR */}
+
+                        {documentError && (
+                            <div className="mb-6 flex items-start gap-3 rounded-2xl border border-warning-500/30 bg-warning-500/10 p-4 text-sm text-warning-300">
+                                <FaTriangleExclamation className="mt-0.5 shrink-0" />
+
+                                <span>{documentError}</span>
+
+                                <button
+                                    type="button"
+                                    onClick={() => setDocumentError("")}
+                                    className="ml-auto text-warning-400 transition hover:text-warning-300"
+                                >
+                                    <FaXmark />
+                                </button>
+                            </div>
+                        )}
+
+                        {/* USER INFORMATION */}
+
+                        <div className="mb-6">
+                            <Section
+                                title="Applicant Information"
+                                icon={<FaUser />}
+                                right={
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            navigate(
+                                                `/admin/users/${userId}`,
+                                            )
+                                        }
+                                        className="inline-flex items-center gap-2 rounded-xl border border-brand-500/20 bg-brand-500/10 px-4 py-2 text-xs font-bold text-brand-400 transition hover:bg-brand-500/20"
+                                    >
+                                        <FaUserCheck />
+
+                                        View User
+                                    </button>
+                                }
+                            >
+                                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                                    <InfoItem
+                                        label="Full Name"
+                                        value={user?.name}
+                                    />
+
+                                    <InfoItem
+                                        label="Email"
+                                        value={user?.email}
+                                    />
+
+                                    <InfoItem
+                                        label="Phone"
+                                        value={user?.phone}
+                                    />
+
+                                    <InfoItem
+                                        label="Country"
+                                        value={user?.country}
+                                    />
+
+                                    <InfoItem
+                                        label="Account Status"
+                                        value={user?.status}
+                                    />
+
+                                    <InfoItem
+                                        label="Email Verified"
+                                        value={
+                                            user?.emailVerified
+                                                ? "Yes"
+                                                : "No"
+                                        }
+                                    />
+
+                                    <InfoItem
+                                        label="2FA Enabled"
+                                        value={
+                                            user?.twoFactorEnabled
+                                                ? "Yes"
+                                                : "No"
+                                        }
+                                    />
+
+                                    <InfoItem
+                                        label="KYC Submitted"
+                                        value={formatDate(
+                                            kyc.submittedAt,
                                         )}
-                                    </div>
-
-                                    <div>
-                                        <h1 className="text-xl font-bold sm:text-2xl">
-                                            {user?.name || "Unknown User"}
-                                        </h1>
-
-                                        <p className="mt-1 text-sm text-slate-300">
-                                            {user?.email || "No email available"}
-                                        </p>
-
-                                        <p className="mt-1 text-xs text-slate-400">
-                                            KYC ID: {kyc._id}
-                                        </p>
-                                    </div>
+                                    />
                                 </div>
-
-                                <StatusBadge status={kyc.status} />
-                            </div>
+                            </Section>
                         </div>
-                    </div>
 
-                    {/* ERROR */}
+                        {/* PERSONAL + IDENTITY */}
 
-                    {error && (
-                        <div className="mb-6 flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-                            <FaTriangleExclamation className="mt-0.5 shrink-0" />
-
-                            <span>{error}</span>
-
-                            <button
-                                type="button"
-                                onClick={() => setError("")}
-                                className="ml-auto text-red-500 hover:text-red-700"
+                        <div className="mb-6 grid gap-6 lg:grid-cols-2">
+                            <Section
+                                title="Personal Information"
+                                icon={<FaUser />}
                             >
-                                <FaXmark />
-                            </button>
-                        </div>
-                    )}
+                                <div className="grid gap-5 sm:grid-cols-2">
+                                    <InfoItem
+                                        label="First Name"
+                                        value={kyc.firstName}
+                                    />
 
-                    {/* DOCUMENT ERROR */}
+                                    <InfoItem
+                                        label="Last Name"
+                                        value={kyc.lastName}
+                                    />
 
-                    {documentError && (
-                        <div className="mb-6 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-                            <FaTriangleExclamation className="mt-0.5 shrink-0" />
+                                    <InfoItem
+                                        label="Date of Birth"
+                                        value={
+                                            kyc.dateOfBirth
+                                                ? new Date(
+                                                    kyc.dateOfBirth,
+                                                ).toLocaleDateString(
+                                                    "en-NG",
+                                                )
+                                                : null
+                                        }
+                                    />
 
-                            <span>{documentError}</span>
+                                    <InfoItem
+                                        label="Country"
+                                        value={kyc.country}
+                                    />
 
-                            <button
-                                type="button"
-                                onClick={() => setDocumentError("")}
-                                className="ml-auto text-amber-600 hover:text-amber-800"
+                                    <InfoItem
+                                        label="City"
+                                        value={kyc.city}
+                                    />
+
+                                    <InfoItem
+                                        label="State"
+                                        value={kyc.state}
+                                    />
+
+                                    <InfoItem
+                                        label="Postal Code"
+                                        value={kyc.postalCode}
+                                    />
+
+                                    <InfoItem
+                                        label="Address"
+                                        value={kyc.address}
+                                    />
+                                </div>
+                            </Section>
+
+                            <Section
+                                title="Identity Information"
+                                icon={<FaIdCard />}
                             >
-                                <FaXmark />
-                            </button>
-                        </div>
-                    )}
-
-                    {/* USER INFORMATION */}
-
-                    <div className="mb-6">
-                        <Section
-                            title="Applicant Information"
-                            icon={<FaUser />}
-                            right={
-                                <button
-                                    type="button"
-                                    onClick={() => navigate(`/admin/users/${userId}`)}
-                                    className="inline-flex items-center gap-2 rounded-xl bg-blue-50 px-4 py-2 text-xs font-bold text-blue-700 hover:bg-blue-100"
-                                >
-                                    <FaUserCheck />
-
-                                    View User
-                                </button>
-                            }
-                        >
-                            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-                                <InfoItem label="Full Name" value={user?.name} />
-
-                                <InfoItem label="Email" value={user?.email} />
-
-                                <InfoItem label="Phone" value={user?.phone} />
-
-                                <InfoItem label="Country" value={user?.country} />
-
-                                <InfoItem
-                                    label="Account Status"
-                                    value={user?.status}
-                                />
-
-                                <InfoItem
-                                    label="Email Verified"
-                                    value={user?.emailVerified ? "Yes" : "No"}
-                                />
-
-                                <InfoItem
-                                    label="2FA Enabled"
-                                    value={user?.twoFactorEnabled ? "Yes" : "No"}
-                                />
-
-                                <InfoItem
-                                    label="KYC Submitted"
-                                    value={formatDate(kyc.submittedAt)}
-                                />
-                            </div>
-                        </Section>
-                    </div>
-
-                    {/* PERSONAL + IDENTITY */}
-
-                    <div className="mb-6 grid gap-6 lg:grid-cols-2">
-                        <Section
-                            title="Personal Information"
-                            icon={<FaUser />}
-                        >
-                            <div className="grid gap-5 sm:grid-cols-2">
-                                <InfoItem
-                                    label="First Name"
-                                    value={kyc.firstName}
-                                />
-
-                                <InfoItem
-                                    label="Last Name"
-                                    value={kyc.lastName}
-                                />
-
-                                <InfoItem
-                                    label="Date of Birth"
-                                    value={
-                                        kyc.dateOfBirth
-                                            ? new Date(kyc.dateOfBirth).toLocaleDateString(
-                                                "en-NG"
-                                            )
-                                            : null
-                                    }
-                                />
-
-                                <InfoItem
-                                    label="Country"
-                                    value={kyc.country}
-                                />
-
-                                <InfoItem
-                                    label="City"
-                                    value={kyc.city}
-                                />
-
-                                <InfoItem
-                                    label="State"
-                                    value={kyc.state}
-                                />
-
-                                <InfoItem
-                                    label="Postal Code"
-                                    value={kyc.postalCode}
-                                />
-
-                                <InfoItem
-                                    label="Address"
-                                    value={kyc.address}
-                                />
-                            </div>
-                        </Section>
-
-                        <Section
-                            title="Identity Information"
-                            icon={<FaIdCard />}
-                        >
-                            <div className="grid gap-5 sm:grid-cols-2">
-                                <InfoItem
-                                    label="Document Type"
-                                    value={
-                                        kyc.identityDocumentType
+                                <div className="grid gap-5 sm:grid-cols-2">
+                                    <InfoItem
+                                        label="Document Type"
+                                        value={kyc.identityDocumentType
                                             ?.replaceAll("_", " ")
-                                            ?.replace(/\b\w/g, (char) =>
-                                                char.toUpperCase()
-                                            )
-                                    }
-                                />
+                                            ?.replace(
+                                                /\b\w/g,
+                                                (char) =>
+                                                    char.toUpperCase(),
+                                            )}
+                                    />
 
-                                <InfoItem
-                                    label="Document Number"
-                                    value={kyc.identityDocumentNumber}
-                                />
+                                    <InfoItem
+                                        label="Document Number"
+                                        value={
+                                            kyc.identityDocumentNumber
+                                        }
+                                    />
 
-                                <InfoItem
-                                    label="Submitted At"
-                                    value={formatDate(kyc.submittedAt)}
-                                />
+                                    <InfoItem
+                                        label="Submitted At"
+                                        value={formatDate(
+                                            kyc.submittedAt,
+                                        )}
+                                    />
 
-                                <InfoItem
-                                    label="Current Status"
-                                    value={kyc.status?.replaceAll("_", " ")}
-                                />
-                            </div>
-                        </Section>
-                    </div>
-
-                    {/* DOCUMENTS */}
-
-                    <div className="mb-6">
-                        <Section
-                            title="Identity Documents"
-                            icon={<FaFileCircleCheck />}
-                            right={
-                                <span className="text-xs text-slate-500">
-                                    Secure administrator access
-                                </span>
-                            }
-                        >
-                            <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-                                <DocumentCard
-                                    title="Identity Document - Front"
-                                    documentType="documentFront"
-                                    available={hasFront}
-                                    loading={documentLoading.documentFront}
-                                    onView={handleViewDocument}
-                                />
-
-                                <DocumentCard
-                                    title="Identity Document - Back"
-                                    documentType="documentBack"
-                                    available={hasBack}
-                                    loading={documentLoading.documentBack}
-                                    onView={handleViewDocument}
-                                />
-
-                                <DocumentCard
-                                    title="Selfie"
-                                    documentType="selfie"
-                                    available={hasSelfie}
-                                    loading={documentLoading.selfie}
-                                    onView={handleViewDocument}
-                                />
-                            </div>
-                        </Section>
-                    </div>
-
-                    {/* REVIEW */}
-
-                    <div className="mb-6">
-                        <Section
-                            title="Review Information"
-                            icon={<FaShieldHalved />}
-                        >
-                            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-                                <InfoItem
-                                    label="Status"
-                                    value={kyc.status?.replaceAll("_", " ")}
-                                />
-
-                                <InfoItem
-                                    label="Reviewed By"
-                                    value={kyc.reviewedBy?.name}
-                                />
-
-                                <InfoItem
-                                    label="Reviewed At"
-                                    value={formatDate(kyc.reviewedAt)}
-                                />
-
-                                <InfoItem
-                                    label="Verified At"
-                                    value={formatDate(kyc.verifiedAt)}
-                                />
-                            </div>
-
-                            {kyc.rejectionReason && (
-                                <div className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4">
-                                    <p className="mb-1 text-xs font-bold uppercase tracking-wide text-red-500">
-                                        Rejection Reason
-                                    </p>
-
-                                    <p className="text-sm leading-6 text-red-800">
-                                        {kyc.rejectionReason}
-                                    </p>
+                                    <InfoItem
+                                        label="Current Status"
+                                        value={kyc.status?.replaceAll(
+                                            "_",
+                                            " ",
+                                        )}
+                                    />
                                 </div>
-                            )}
+                            </Section>
+                        </div>
 
-                            {kyc.reviewNote && (
-                                <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
-                                    <p className="mb-1 text-xs font-bold uppercase tracking-wide text-slate-500">
-                                        Review Note
-                                    </p>
+                        {/* DOCUMENTS */}
 
-                                    <p className="text-sm leading-6 text-slate-700">
-                                        {kyc.reviewNote}
-                                    </p>
-                                </div>
-                            )}
-                        </Section>
-                    </div>
-
-                    {/* ADMIN ACTIONS */}
-
-                    {isUnderReview && (
-                        <section className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm sm:p-6">
-                            <div className="mb-5">
-                                <h2 className="text-lg font-bold text-slate-900">
-                                    KYC Review
-                                </h2>
-
-                                <p className="mt-1 text-sm text-slate-500">
-                                    Review the applicant's information and documents before
-                                    making a decision.
-                                </p>
-                            </div>
-
-                            <div className="mb-5">
-                                <label
-                                    htmlFor="reviewNote"
-                                    className="mb-2 block text-sm font-semibold text-slate-700"
-                                >
-                                    Review Note
-                                    <span className="ml-1 font-normal text-slate-400">
-                                        (optional)
+                        <div className="mb-6">
+                            <Section
+                                title="Identity Documents"
+                                icon={<FaFileCircleCheck />}
+                                right={
+                                    <span className="text-xs text-surface-500">
+                                        Secure administrator access
                                     </span>
-                                </label>
+                                }
+                            >
+                                <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+                                    <DocumentCard
+                                        title="Identity Document - Front"
+                                        documentType="documentFront"
+                                        available={hasFront}
+                                        loading={
+                                            documentLoading.documentFront
+                                        }
+                                        onView={handleViewDocument}
+                                    />
 
-                                <textarea
-                                    id="reviewNote"
-                                    value={reviewNote}
-                                    onChange={(event) =>
-                                        setReviewNote(event.target.value)
-                                    }
-                                    rows={4}
-                                    maxLength={2000}
-                                    placeholder="Add an internal review note..."
-                                    className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100"
-                                />
+                                    <DocumentCard
+                                        title="Identity Document - Back"
+                                        documentType="documentBack"
+                                        available={hasBack}
+                                        loading={
+                                            documentLoading.documentBack
+                                        }
+                                        onView={handleViewDocument}
+                                    />
 
-                                <p className="mt-1 text-right text-xs text-slate-400">
-                                    {reviewNote.length}/2000
-                                </p>
-                            </div>
+                                    <DocumentCard
+                                        title="Selfie"
+                                        documentType="selfie"
+                                        available={hasSelfie}
+                                        loading={
+                                            documentLoading.selfie
+                                        }
+                                        onView={handleViewDocument}
+                                    />
+                                </div>
+                            </Section>
+                        </div>
 
-                            <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowRejectModal(true)}
-                                    disabled={actionLoading}
-                                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-5 py-3 text-sm font-bold text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
-                                >
-                                    <FaTimes />
+                        {/* REVIEW */}
 
-                                    Reject KYC
-                                </button>
+                        <div className="mb-6">
+                            <Section
+                                title="Review Information"
+                                icon={<FaShieldHalved />}
+                            >
+                                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                                    <InfoItem
+                                        label="Status"
+                                        value={kyc.status?.replaceAll(
+                                            "_",
+                                            " ",
+                                        )}
+                                    />
 
-                                <button
-                                    type="button"
-                                    onClick={handleApprove}
-                                    disabled={actionLoading}
-                                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
-                                >
-                                    {actionLoading ? (
-                                        <>
-                                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                                    <InfoItem
+                                        label="Reviewed By"
+                                        value={kyc.reviewedBy?.name}
+                                    />
 
-                                            Processing...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <FaCheck />
+                                    <InfoItem
+                                        label="Reviewed At"
+                                        value={formatDate(
+                                            kyc.reviewedAt,
+                                        )}
+                                    />
 
-                                            Approve KYC
-                                        </>
-                                    )}
-                                </button>
-                            </div>
-                        </section>
-                    )}
+                                    <InfoItem
+                                        label="Verified At"
+                                        value={formatDate(
+                                            kyc.verifiedAt,
+                                        )}
+                                    />
+                                </div>
+
+                                {kyc.rejectionReason && (
+                                    <div className="mt-5 rounded-xl border border-danger-500/30 bg-danger-500/10 p-4">
+                                        <p className="mb-1 text-xs font-bold uppercase tracking-wide text-danger-400">
+                                            Rejection Reason
+                                        </p>
+
+                                        <p className="text-sm leading-6 text-danger-200">
+                                            {kyc.rejectionReason}
+                                        </p>
+                                    </div>
+                                )}
+
+                                {kyc.reviewNote && (
+                                    <div className="mt-5 rounded-xl border border-surface-700 bg-surface-800 p-4">
+                                        <p className="mb-1 text-xs font-bold uppercase tracking-wide text-surface-400">
+                                            Review Note
+                                        </p>
+
+                                        <p className="text-sm leading-6 text-surface-200">
+                                            {kyc.reviewNote}
+                                        </p>
+                                    </div>
+                                )}
+                            </Section>
+                        </div>
+
+                        {/* ADMIN ACTIONS */}
+
+                        {isUnderReview && (
+                            <section className="rounded-2xl border border-brand-500/20 bg-surface-900 p-5 shadow-lg shadow-brand-500/5 sm:p-6">
+                                <div className="mb-5">
+                                    <h2 className="text-lg font-bold text-surface-100">
+                                        KYC Review
+                                    </h2>
+
+                                    <p className="mt-1 text-sm text-surface-400">
+                                        Review the applicant's information
+                                        and documents before making a
+                                        decision.
+                                    </p>
+                                </div>
+
+                                <div className="mb-5">
+                                    <label
+                                        htmlFor="reviewNote"
+                                        className="mb-2 block text-sm font-semibold text-surface-200"
+                                    >
+                                        Review Note
+
+                                        <span className="ml-1 font-normal text-surface-500">
+                                            (optional)
+                                        </span>
+                                    </label>
+
+                                    <textarea
+                                        id="reviewNote"
+                                        value={reviewNote}
+                                        onChange={(event) =>
+                                            setReviewNote(
+                                                event.target.value,
+                                            )
+                                        }
+                                        rows={4}
+                                        maxLength={2000}
+                                        placeholder="Add an internal review note..."
+                                        className="w-full resize-none rounded-xl border border-surface-700 bg-surface-800 px-4 py-3 text-sm text-surface-100 outline-none transition placeholder:text-surface-500 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
+                                    />
+
+                                    <p className="mt-1 text-right text-xs text-surface-500">
+                                        {reviewNote.length}/2000
+                                    </p>
+                                </div>
+
+                                <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setShowRejectModal(true)
+                                        }
+                                        disabled={actionLoading}
+                                        className="inline-flex items-center justify-center gap-2 rounded-xl border border-danger-500/30 bg-danger-500/10 px-5 py-3 text-sm font-bold text-danger-400 transition hover:bg-danger-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                        <FaXmark />
+
+                                        Reject KYC
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={handleApprove}
+                                        disabled={actionLoading}
+                                        className="inline-flex items-center justify-center gap-2 rounded-xl bg-success-500 px-5 py-3 text-sm font-bold text-surface-950 transition hover:bg-success-400 disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                        {actionLoading ? (
+                                            <>
+                                                <span className="h-4 w-4 animate-spin rounded-full border-2 border-surface-950 border-t-transparent" />
+
+                                                Processing...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <FaCheck />
+
+                                                Approve KYC
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            </section>
+                        )}
+                    </div>
                 </div>
             </div>
 
             {/* REJECTION MODAL */}
 
             {showRejectModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4">
-                    <div className="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl">
-                        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-surface-950/80 p-4 backdrop-blur-sm">
+                    <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-surface-700 bg-surface-900 shadow-2xl">
+                        <div className="flex items-center justify-between border-b border-surface-700 px-5 py-4">
                             <div>
-                                <h2 className="text-lg font-bold text-slate-900">
+                                <h2 className="text-lg font-bold text-surface-100">
                                     Reject KYC Application
                                 </h2>
 
-                                <p className="mt-1 text-xs text-slate-500">
+                                <p className="mt-1 text-xs text-surface-400">
                                     A rejection reason is required.
                                 </p>
                             </div>
 
                             <button
                                 type="button"
-                                onClick={() => setShowRejectModal(false)}
+                                onClick={() =>
+                                    setShowRejectModal(false)
+                                }
                                 disabled={actionLoading}
-                                className="flex h-9 w-9 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                                className="flex h-9 w-9 items-center justify-center rounded-full text-surface-400 transition hover:bg-surface-800 hover:text-surface-100"
                             >
                                 <FaXmark />
                             </button>
                         </div>
 
-                        <form onSubmit={handleReject} className="p-5">
+                        <form
+                            onSubmit={handleReject}
+                            className="p-5"
+                        >
                             <label
                                 htmlFor="rejectionReason"
-                                className="mb-2 block text-sm font-semibold text-slate-700"
+                                className="mb-2 block text-sm font-semibold text-surface-200"
                             >
                                 Rejection Reason
                             </label>
@@ -973,25 +1070,29 @@ const AdminKycDetails = () => {
                                 id="rejectionReason"
                                 value={rejectionReason}
                                 onChange={(event) =>
-                                    setRejectionReason(event.target.value)
+                                    setRejectionReason(
+                                        event.target.value,
+                                    )
                                 }
                                 rows={5}
                                 maxLength={1000}
                                 required
                                 placeholder="Explain why this KYC application is being rejected..."
-                                className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-red-500 focus:bg-white focus:ring-2 focus:ring-red-100"
+                                className="w-full resize-none rounded-xl border border-surface-700 bg-surface-800 px-4 py-3 text-sm text-surface-100 outline-none transition placeholder:text-surface-500 focus:border-danger-500 focus:ring-2 focus:ring-danger-500/20"
                             />
 
-                            <p className="mt-1 text-right text-xs text-slate-400">
+                            <p className="mt-1 text-right text-xs text-surface-500">
                                 {rejectionReason.length}/1000
                             </p>
 
                             <div className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                                 <button
                                     type="button"
-                                    onClick={() => setShowRejectModal(false)}
+                                    onClick={() =>
+                                        setShowRejectModal(false)
+                                    }
                                     disabled={actionLoading}
-                                    className="rounded-xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                                    className="rounded-xl border border-surface-700 bg-surface-800 px-5 py-3 text-sm font-semibold text-surface-200 transition hover:bg-surface-700 disabled:opacity-50"
                                 >
                                     Cancel
                                 </button>
@@ -999,9 +1100,10 @@ const AdminKycDetails = () => {
                                 <button
                                     type="submit"
                                     disabled={
-                                        actionLoading || !rejectionReason.trim()
+                                        actionLoading ||
+                                        !rejectionReason.trim()
                                     }
-                                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-5 py-3 text-sm font-bold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-danger-500 px-5 py-3 text-sm font-bold text-white transition hover:bg-danger-400 disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                     {actionLoading ? (
                                         <>
@@ -1011,7 +1113,7 @@ const AdminKycDetails = () => {
                                         </>
                                     ) : (
                                         <>
-                                            <FaTimes />
+                                            <FaXmark />
 
                                             Reject KYC
                                         </>
