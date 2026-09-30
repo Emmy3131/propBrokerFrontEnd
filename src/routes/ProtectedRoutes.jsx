@@ -1,15 +1,19 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
-const ProtectedRoute = () => {
-    const { user, loading, isAuthenticated,} = useAuth();
+const ProtectedRoute = ({ allowedRoles = [] }) => {
+    const {
+        user,
+        loading,
+        isAuthenticated,
+    } = useAuth();
 
     const location = useLocation();
 
     /*
-    ==============================================
+    =====================================================
     AUTHENTICATION IS STILL LOADING
-    ==============================================
+    =====================================================
     */
 
     if (loading) {
@@ -27,9 +31,9 @@ const ProtectedRoute = () => {
     }
 
     /*
-    ==============================================
+    =====================================================
     USER IS NOT AUTHENTICATED
-    ==============================================
+    =====================================================
     */
 
     if (!isAuthenticated || !user) {
@@ -47,9 +51,55 @@ const ProtectedRoute = () => {
     }
 
     /*
-    ==============================================
-    USER IS AUTHENTICATED
-    ==============================================
+    =====================================================
+    ROLE PROTECTION
+    =====================================================
+    */
+
+    if (
+        allowedRoles.length > 0 &&
+        !allowedRoles.includes(user.role)
+    ) {
+        /*
+        If an authenticated user tries to access a route
+        that does not belong to their role, send them to
+        their own dashboard.
+        */
+
+        if (user.role === "admin") {
+            return (
+                <Navigate
+                    to="/adminDashboard"
+                    replace
+                />
+            );
+        }
+
+        if (user.role === "user") {
+            return (
+                <Navigate
+                    to="/user/dashboard"
+                    replace
+                />
+            );
+        }
+
+        /*
+        Unknown role
+        */
+
+        return (
+            <Navigate
+                to="/login"
+                replace
+            />
+        );
+    }
+
+    /*
+    =====================================================
+    AUTHENTICATED + AUTHORIZED
+    =====================================================
     */
 
     return <Outlet />;
