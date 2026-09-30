@@ -1,13 +1,38 @@
 import {
     createContext,
+    useCallback,
     useContext,
     useEffect,
+    useRef,
     useState,
 } from "react";
 
 import api from "../library/api";
 
 const AuthContext = createContext(null);
+
+/*
+=====================================================
+AUTH CONFIGURATION
+=====================================================
+*/
+
+/*
+ * Automatically log the user out after 15 minutes
+ * without activity.
+ *
+ * 15 minutes = 15 * 60 * 1000 milliseconds
+ */
+const INACTIVITY_TIMEOUT = 15 * 60 * 1000;
+
+/*
+ * How often the activity timer should be checked.
+ *
+ * We check every 1 second so that the logout happens
+ * very close to the configured timeout.
+ */
+const ACTIVITY_CHECK_INTERVAL = 1000;
+
 
 /*
 =====================================================
@@ -21,20 +46,189 @@ export const AuthProvider = ({ children }) => {
 
     /*
     =================================================
+    INACTIVITY REFERENCES
+    =================================================
+    */
+
+    /*
+     * Stores the timestamp of the user's last activity.
+     *
+     * useRef is used instead of state because changing
+     * this value should NOT cause React to rerender.
+     */
+    const lastActivityRef = useRef(Date.now());
+
+    /*
+     * Stores the interval that checks for inactivity.
+     */
+    const inactivityIntervalRef = useRef(null);
+
+    /*
+     * Prevents multiple logout requests from being
+     * triggered at the same time.
+     */
+    const isLoggingOutRef = useRef(false);
+
+    /*
+     * Prevents activity events from creating unnecessary
+     * work immediately after the user becomes inactive.
+     */
+    const activityThrottleRef = useRef(false);
+
+
+    /*
+    =================================================
+    UPDATE LAST ACTIVITY
+    =================================================
+    */
+
+    const updateActivity = useCallback(() => {
+        /*
+         * Only track activity while the user is
+         * authenticated.
+         */
+        if (!user) {
+            return;
+        }
+
+        /*
+         * Avoid writing to the ref thousands of times
+         * during mouse movement.
+         */
+        if (activityThrottleRef.current) {
+            return;
+        }
+
+        activityThrottleRef.current = true;
+
+        lastActivityRef.current = Date.now();
+
+        /*
+         * Allow another activity update shortly after.
+         */
+        window.setTimeout(() => {
+            activityThrottleRef.current = false;
+        }, 1000);
+    }, [user]);
+
+
+    /*
+    =================================================
+    STOP INACTIVITY TIMER
+    =================================================
+    */
+
+    const stopInactivityTimer = useCallback(() => {
+        if (inactivityIntervalRef.current) {
+            window.clearInterval(
+                inactivityIntervalRef.current
+            );
+
+            inactivityIntervalRef.current = null;
+        }
+    }, []);
+
+
+    /*
+    =================================================
+    LOGOUT
+    =================================================
+    */
+
+    const logout = useCallback(async () => {
+        /*
+        ==============================================
+        PREVENT MULTIPLE LOGOUT REQUESTS
+        ==============================================
+        */
+
+        if (isLoggingOutRef.current) {
+            return;
+        }
+
+        isLoggingOutRef.current = true;
+
+        /*
+        ==============================================
+        STOP INACTIVITY TIMER
+        ==============================================
+        */
+
+        stopInactivityTimer();
+
+        try {
+            /*
+            ==========================================
+            TELL BACKEND TO LOGOUT
+            ==========================================
+            */
+
+            await api.post("/auth/logout");
+
+        } catch (error) {
+            console.error(
+                "Logout failed:",
+                error.response?.data ||
+                error.message
+            );
+
+        } finally {
+            /*
+            ==========================================
+            CLEAR LOCAL AUTHENTICATION
+            ==========================================
+            */
+
+            localStorage.removeItem("token");
+
+            localStorage.removeItem("csrfToken");
+
+            /*
+            ==========================================
+            CLEAR REACT AUTH STATE
+            ==========================================
+            */
+
+            setUser(null);
+
+            /*
+            ==========================================
+            RESET ACTIVITY TIMER
+            ==========================================
+            */
+
+            lastActivityRef.current = Date.now();
+
+            isLoggingOutRef.current = false;
+
+            /*
+            ==========================================
+            REDIRECT TO LOGIN
+            ==========================================
+            */
+
+            window.location.replace("/login");
+        }
+    }, [stopInactivityTimer]);
+
+    /*
+    =================================================
     GET CURRENT USER
     =================================================
     */
 
-    const getCurrentUser = async () => {
+    const getCurrentUser = useCallback(async () => {
         const token = localStorage.getItem("token");
 
         /*
-        No access token means there is no authenticated
-        frontend session to restore.
+        ==============================================
+        NO ACCESS TOKEN
+        ==============================================
         */
 
         if (!token) {
             setUser(null);
+
             return null;
         }
 
@@ -52,7 +246,16 @@ export const AuthProvider = ({ children }) => {
                 );
             }
 
+            /*
+             * Update React authentication state.
+             */
             setUser(currentUser);
+
+            /*
+             * Treat successful authentication as
+             * recent activity.
+             */
+            lastActivityRef.current = Date.now();
 
             return currentUser;
 
@@ -64,29 +267,43 @@ export const AuthProvider = ({ children }) => {
             );
 
             /*
-            The access token is invalid or expired.
+            ==========================================
+            ACCESS TOKEN INVALID / EXPIRED
+            ==========================================
             */
 
             localStorage.removeItem("token");
 
+            localStorage.removeItem("csrfToken");
+
             setUser(null);
+
+            /*
+            ==========================================
+            REDIRECT TO LOGIN
+            ==========================================
+            */
+
+            window.location.replace("/login");
 
             return null;
         }
-    };
+    }, []);
+
 
     /*
     =================================================
     COMPLETE LOGIN
     =================================================
 
-    This function is used after successful authentication.
+    Used by:
 
-    It is especially important for the 2FA flow because
-    the access token is only issued AFTER 2FA verification.
+    - Normal login
+    - 2FA login
+    - Session refresh
     */
 
-    const completeLogin = async (authData) => {
+    const completeLogin = useCallback(async (authData) => {
         const accessToken =
             authData?.accessToken ||
             authData?.token;
@@ -97,13 +314,24 @@ export const AuthProvider = ({ children }) => {
             );
         }
 
-        // Save access token
+        /*
+        ==============================================
+        SAVE ACCESS TOKEN
+        ==============================================
+        */
+
         localStorage.setItem(
             "token",
             accessToken
         );
 
-        // Save CSRF token
+
+        /*
+        ==============================================
+        SAVE CSRF TOKEN
+        ==============================================
+        */
+
         const csrfToken =
             authData?.csrfToken;
 
@@ -114,10 +342,11 @@ export const AuthProvider = ({ children }) => {
             );
         }
 
+
         /*
-        =====================================================
+        ==============================================
         GET USER FROM LOGIN RESPONSE
-        =====================================================
+        ==============================================
         */
 
         let loggedInUser =
@@ -125,24 +354,28 @@ export const AuthProvider = ({ children }) => {
             authData?.user ||
             null;
 
+
         /*
-        =====================================================
-        IF USER WAS NOT INCLUDED, FETCH /auth/me
-        =====================================================
+        ==============================================
+        IF USER WAS NOT INCLUDED
+        FETCH /auth/me
+        ==============================================
         */
 
         if (!loggedInUser) {
             loggedInUser = await getCurrentUser();
         }
 
+
         /*
-        =====================================================
+        ==============================================
         MAKE SURE USER EXISTS
-        =====================================================
+        ==============================================
         */
 
         if (!loggedInUser) {
             localStorage.removeItem("token");
+
             localStorage.removeItem("csrfToken");
 
             setUser(null);
@@ -152,15 +385,23 @@ export const AuthProvider = ({ children }) => {
             );
         }
 
+
         /*
-        =====================================================
-        THIS IS THE IMPORTANT PART
-    
-        Update React auth state immediately.
-        =====================================================
+        ==============================================
+        UPDATE REACT AUTH STATE IMMEDIATELY
+        ==============================================
         */
 
         setUser(loggedInUser);
+
+
+        /*
+        ==============================================
+        RESET INACTIVITY TIMER
+        ==============================================
+        */
+
+        lastActivityRef.current = Date.now();
 
         console.log(
             "AUTH USER SET:",
@@ -168,7 +409,10 @@ export const AuthProvider = ({ children }) => {
         );
 
         return loggedInUser;
-    };
+
+    }, [getCurrentUser]);
+
+
     /*
     =================================================
     INITIALIZE AUTH
@@ -182,14 +426,22 @@ export const AuthProvider = ({ children }) => {
                     localStorage.getItem("token");
 
                 /*
-                No access token means the user is not
-                authenticated.
+                ======================================
+                NO ACCESS TOKEN
+                ======================================
                 */
 
                 if (!token) {
                     setUser(null);
+
                     return;
                 }
+
+                /*
+                ======================================
+                RESTORE AUTHENTICATED USER
+                ======================================
+                */
 
                 await getCurrentUser();
 
@@ -199,7 +451,147 @@ export const AuthProvider = ({ children }) => {
         };
 
         initializeAuth();
-    }, []);
+
+    }, [getCurrentUser]);
+
+
+    /*
+    =================================================
+    INACTIVITY AUTO-LOGOUT
+    =================================================
+
+    This effect starts ONLY when the user is logged in.
+    */
+
+    useEffect(() => {
+        /*
+         * If there is no authenticated user,
+         * there is nothing to monitor.
+         */
+        if (!user) {
+            stopInactivityTimer();
+
+            return;
+        }
+
+
+        /*
+        ==============================================
+        RESET ACTIVITY
+        ==============================================
+        */
+
+        lastActivityRef.current = Date.now();
+
+
+        /*
+        ==============================================
+        USER ACTIVITY EVENTS
+        ==============================================
+        */
+
+        const activityEvents = [
+            "mousemove",
+            "mousedown",
+            "keydown",
+            "scroll",
+            "touchstart",
+            "click",
+        ];
+
+
+        /*
+        ==============================================
+        ADD ACTIVITY LISTENERS
+        ==============================================
+        */
+
+        activityEvents.forEach((eventName) => {
+            window.addEventListener(
+                eventName,
+                updateActivity,
+                {
+                    passive: true,
+                }
+            );
+        });
+
+
+        /*
+        ==============================================
+        CHECK INACTIVITY
+        ==============================================
+        */
+
+        inactivityIntervalRef.current =
+            window.setInterval(async () => {
+                /*
+                 * Don't do anything if the user has
+                 * already logged out.
+                 */
+                if (!user) {
+                    return;
+                }
+
+                /*
+                 * Don't start another logout while
+                 * one is already running.
+                 */
+                if (isLoggingOutRef.current) {
+                    return;
+                }
+
+                const now = Date.now();
+
+                const inactiveTime =
+                    now -
+                    lastActivityRef.current;
+
+
+                /*
+                =========================================
+                USER HAS BEEN INACTIVE TOO LONG
+                =========================================
+                */
+
+                if (
+                    inactiveTime >=
+                    INACTIVITY_TIMEOUT
+                ) {
+                    console.log(
+                        "User inactive for 15 minutes. Logging out..."
+                    );
+
+                    await logout();
+                }
+
+            }, ACTIVITY_CHECK_INTERVAL);
+
+
+        /*
+        ==============================================
+        CLEANUP
+        ==============================================
+        */
+
+        return () => {
+            activityEvents.forEach((eventName) => {
+                window.removeEventListener(
+                    eventName,
+                    updateActivity
+                );
+            });
+
+            stopInactivityTimer();
+        };
+
+    }, [
+        user,
+        updateActivity,
+        logout,
+        stopInactivityTimer,
+    ]);
+
 
     /*
     =================================================
@@ -221,10 +613,11 @@ export const AuthProvider = ({ children }) => {
                 data
             );
 
+
             /*
-            =====================================================
+            ==========================================
             2FA REQUIRED
-            =====================================================
+            ==========================================
             */
 
             if (
@@ -246,10 +639,11 @@ export const AuthProvider = ({ children }) => {
                 };
             }
 
+
             /*
-            =====================================================
+            ==========================================
             NORMAL LOGIN
-            =====================================================
+            ==========================================
             */
 
             const accessToken =
@@ -262,13 +656,18 @@ export const AuthProvider = ({ children }) => {
                 );
             }
 
+
             /*
-            IMPORTANT:
-            completeLogin updates `user` immediately.
+            * completeLogin updates:
+            * - token
+            * - csrfToken
+            * - user
+            * - inactivity timer
             */
 
             const loggedInUser =
                 await completeLogin(data);
+
 
             return {
                 requiresTwoFactor: false,
@@ -290,6 +689,7 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+
     /*
     =================================================
     SIGNUP
@@ -299,11 +699,11 @@ export const AuthProvider = ({ children }) => {
     const signup = async (userData) => {
         try {
             /*
-            Signup only creates the account.
-
-            It does NOT automatically authenticate
-            the user.
-            */
+             * Signup only creates the account.
+             *
+             * It does NOT automatically authenticate
+             * the user.
+             */
 
             const response = await api.post(
                 "/auth/signup",
@@ -320,6 +720,7 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+
     /*
     =================================================
     REFRESH SESSION
@@ -329,10 +730,10 @@ export const AuthProvider = ({ children }) => {
     const refreshSession = async () => {
         try {
             /*
-            The browser sends the HTTP-only refresh
-            token cookie automatically because api.js
-            should use withCredentials: true.
-            */
+             * The browser sends the HTTP-only refresh
+             * token cookie automatically because api.js
+             * uses withCredentials: true.
+             */
 
             const response = await api.post(
                 "/auth/refresh"
@@ -342,6 +743,7 @@ export const AuthProvider = ({ children }) => {
                 "REFRESH RESPONSE:",
                 response.data
             );
+
 
             const accessToken =
                 response.data?.accessToken ||
@@ -353,10 +755,11 @@ export const AuthProvider = ({ children }) => {
                 );
             }
 
+
             /*
-            Store the new access token and restore
-            the authenticated user.
-            */
+             * Store the new access token and restore
+             * the authenticated user.
+             */
 
             const currentUser =
                 await completeLogin(
@@ -374,52 +777,22 @@ export const AuthProvider = ({ children }) => {
 
             localStorage.removeItem("token");
 
-            localStorage.removeItem(
-                "csrfToken"
-            );
+            localStorage.removeItem("csrfToken");
 
             setUser(null);
+
+            /*
+            ==========================================
+            REDIRECT TO LOGIN
+            ==========================================
+            */
+
+            window.location.replace("/login");
 
             return null;
         }
     };
 
-    /*
-    =================================================
-    LOGOUT
-    =================================================
-    */
-
-    const logout = async () => {
-        try {
-            await api.post(
-                "/auth/logout"
-            );
-
-        } catch (error) {
-            console.error(
-                "Logout failed:",
-                error.response?.data ||
-                error.message
-            );
-
-        } finally {
-            /*
-            Always clear the local authentication
-            state even if the backend request fails.
-            */
-
-            localStorage.removeItem(
-                "token"
-            );
-
-            localStorage.removeItem(
-                "csrfToken"
-            );
-
-            setUser(null);
-        }
-    };
 
     /*
     =================================================
@@ -428,6 +801,11 @@ export const AuthProvider = ({ children }) => {
     */
 
     const logoutAll = async () => {
+        /*
+         * Stop inactivity monitoring immediately.
+         */
+        stopInactivityTimer();
+
         try {
             await api.post(
                 "/auth/logout-all"
@@ -450,8 +828,11 @@ export const AuthProvider = ({ children }) => {
             );
 
             setUser(null);
+
+            lastActivityRef.current = Date.now();
         }
     };
+
 
     /*
     =================================================
@@ -463,42 +844,54 @@ export const AuthProvider = ({ children }) => {
         <AuthContext.Provider
             value={{
                 /*
-                User state
+                ========================================
+                USER STATE
+                ========================================
                 */
 
                 user,
 
                 /*
-                Initial authentication loading state
+                ========================================
+                LOADING STATE
+                ========================================
                 */
 
                 loading,
 
                 /*
-                Authenticated only after a user has
-                actually been loaded.
+                ========================================
+                AUTHENTICATED STATE
+                ========================================
                 */
 
                 isAuthenticated:
                     Boolean(user),
 
                 /*
-                Authentication methods
+                ========================================
+                AUTHENTICATION METHODS
+                ========================================
                 */
 
                 login,
+
                 completeLogin,
 
                 signup,
 
                 logout,
+
                 logoutAll,
 
                 /*
-                Session methods
+                ========================================
+                SESSION METHODS
+                ========================================
                 */
 
                 getCurrentUser,
+
                 refreshSession,
             }}
         >
@@ -506,6 +899,7 @@ export const AuthProvider = ({ children }) => {
         </AuthContext.Provider>
     );
 };
+
 
 /*
 =====================================================
@@ -525,5 +919,6 @@ export const useAuth = () => {
 
     return context;
 };
+
 
 export default AuthProvider;

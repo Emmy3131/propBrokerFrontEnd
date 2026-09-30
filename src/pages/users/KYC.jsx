@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import {
     FaArrowRight,
@@ -52,11 +52,7 @@ const KYC = () => {
     =====================================================
     */
 
-    useEffect(() => {
-        fetchKyc();
-    }, []);
-
-    const fetchKyc = async () => {
+    const fetchKyc = useCallback(async () => {
         try {
             setLoading(true);
             setError("");
@@ -64,6 +60,8 @@ const KYC = () => {
             const response = await api.get("/kyc/me");
 
             const currentKyc = response?.data?.data?.kyc || null;
+
+            console.log("KYC REFRESHED:", currentKyc);
 
             setKyc(currentKyc);
 
@@ -74,8 +72,8 @@ const KYC = () => {
 
                     dateOfBirth: currentKyc.dateOfBirth
                         ? new Date(currentKyc.dateOfBirth)
-                            .toISOString()
-                            .split("T")[0]
+                              .toISOString()
+                              .split("T")[0]
                         : "",
 
                     country: currentKyc.country || "",
@@ -88,25 +86,46 @@ const KYC = () => {
                         currentKyc.identityDocumentType || "",
 
                     /*
-                     * /kyc/me intentionally does not return the
-                     * full identity document number for security.
-                     *
-                     * Therefore we leave this empty when the page
-                     * is reloaded and ask the user to enter it again
-                     * if they are editing/resubmitting.
+                     * The backend intentionally does not return
+                     * the existing identity document number.
                      */
+                    identityDocumentNumber: "",
+                });
+            } else {
+                setForm({
+                    firstName: "",
+                    lastName: "",
+                    dateOfBirth: "",
+                    country: "",
+                    address: "",
+                    city: "",
+                    state: "",
+                    postalCode: "",
+                    identityDocumentType: "",
                     identityDocumentNumber: "",
                 });
             }
         } catch (err) {
+            console.error("FETCH KYC ERROR:", err);
+
             setError(
                 err?.response?.data?.message ||
-                "Unable to load your KYC information.",
+                    "Unable to load your KYC information.",
             );
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
+
+    /*
+    =====================================================
+    INITIAL + AUTOMATIC KYC REFRESH
+    =====================================================
+    */
+
+    useEffect(() => {
+        fetchKyc();
+    }, [fetchKyc]);
 
     /*
     =====================================================
@@ -182,8 +201,7 @@ const KYC = () => {
             e.target.value = "";
 
             setError(
-                err?.message ||
-                "Unable to select this file.",
+                err?.message || "Unable to select this file.",
             );
         }
     };
@@ -209,8 +227,7 @@ const KYC = () => {
     const isUnderReview = status === "under_review";
     const isRejected = status === "rejected";
 
-    const canEdit =
-        !isVerified && !isUnderReview;
+    const canEdit = !isVerified && !isUnderReview;
 
     /*
     =====================================================
@@ -235,45 +252,31 @@ const KYC = () => {
         };
 
         if (!payload.firstName) {
-            throw new Error(
-                "Please enter your first name.",
-            );
+            throw new Error("Please enter your first name.");
         }
 
         if (!payload.lastName) {
-            throw new Error(
-                "Please enter your last name.",
-            );
+            throw new Error("Please enter your last name.");
         }
 
         if (!payload.dateOfBirth) {
-            throw new Error(
-                "Please provide your date of birth.",
-            );
+            throw new Error("Please provide your date of birth.");
         }
 
         if (!payload.country) {
-            throw new Error(
-                "Please provide your country.",
-            );
+            throw new Error("Please provide your country.");
         }
 
         if (!payload.address) {
-            throw new Error(
-                "Please provide your address.",
-            );
+            throw new Error("Please provide your address.");
         }
 
         if (!payload.city) {
-            throw new Error(
-                "Please provide your city.",
-            );
+            throw new Error("Please provide your city.");
         }
 
         if (!payload.state) {
-            throw new Error(
-                "Please provide your state.",
-            );
+            throw new Error("Please provide your state.");
         }
 
         if (!payload.identityDocumentType) {
@@ -291,15 +294,9 @@ const KYC = () => {
         let response;
 
         if (!kyc) {
-            response = await api.post(
-                "/kyc",
-                payload,
-            );
+            response = await api.post("/kyc", payload);
         } else {
-            response = await api.patch(
-                "/kyc",
-                payload,
-            );
+            response = await api.patch("/kyc", payload);
         }
 
         const updatedKyc =
@@ -334,8 +331,8 @@ const KYC = () => {
         } catch (err) {
             setError(
                 err?.response?.data?.message ||
-                err?.message ||
-                "Unable to save your KYC information.",
+                    err?.message ||
+                    "Unable to save your KYC information.",
             );
         } finally {
             setSaving(false);
@@ -399,7 +396,7 @@ const KYC = () => {
         );
 
         /*
-         * Do not manually set Content-Type here.
+         * Do not manually set Content-Type.
          * Axios/browser will create the multipart boundary.
          */
 
@@ -434,11 +431,13 @@ const KYC = () => {
                 documentBack: null,
                 selfie: null,
             });
+
+            await fetchKyc();
         } catch (err) {
             setError(
                 err?.response?.data?.message ||
-                err?.message ||
-                "Unable to upload your documents.",
+                    err?.message ||
+                    "Unable to upload your documents.",
             );
         } finally {
             setUploading(false);
@@ -459,14 +458,11 @@ const KYC = () => {
 
             /*
              * Save the information first.
-             *
-             * This is especially important when the user
-             * is resubmitting after a rejection.
              */
             await saveKycInformation();
 
             /*
-             * If files have been selected, upload them.
+             * Upload selected files.
              */
             if (
                 files.documentFront ||
@@ -477,8 +473,8 @@ const KYC = () => {
             }
 
             /*
-             * Ask backend to validate everything and
-             * move KYC to under_review.
+             * Ask backend to validate everything
+             * and move KYC to under_review.
              */
             const response = await api.post(
                 "/kyc/submit",
@@ -490,10 +486,6 @@ const KYC = () => {
             if (submittedKyc) {
                 setKyc(submittedKyc);
             } else {
-                /*
-                 * Refresh if backend does not return
-                 * the full KYC object.
-                 */
                 await fetchKyc();
             }
 
@@ -505,13 +497,13 @@ const KYC = () => {
 
             setSuccess(
                 response?.data?.message ||
-                "Your KYC has been submitted successfully and is now under review.",
+                    "Your KYC has been submitted successfully and is now under review.",
             );
         } catch (err) {
             setError(
                 err?.response?.data?.message ||
-                err?.message ||
-                "Unable to submit your KYC.",
+                    err?.message ||
+                    "Unable to submit your KYC.",
             );
         } finally {
             setSubmitting(false);
@@ -845,7 +837,7 @@ const KYC = () => {
                 </div>
             )}
 
-            {/* FORM */}
+            {/* EDITABLE KYC AREA */}
 
             {canEdit && (
                 <>
@@ -1214,7 +1206,9 @@ const KYC = () => {
                                     type="button"
                                     onClick={handleSubmitKyc}
                                     disabled={
-                                        submitting || saving || uploading
+                                        submitting ||
+                                        saving ||
+                                        uploading
                                     }
                                     className="mt-6 inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-brand-500 hover:bg-brand-600 text-white font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
