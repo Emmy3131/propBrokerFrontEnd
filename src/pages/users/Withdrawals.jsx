@@ -317,7 +317,7 @@ const Withdraw = () => {
             <div>
                 <div className="mb-2 flex items-center gap-2 text-sm text-surface-400">
                     <Link
-                        to="/user"
+                        to="/user/dashboard"
                         className="transition hover:text-surface-100"
                     >
                         Dashboard

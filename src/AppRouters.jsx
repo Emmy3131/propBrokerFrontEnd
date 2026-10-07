@@ -68,6 +68,7 @@ import Transactions from "./pages/users/Transactions";
 import Deposit from "./pages/users/Deposit";
 import Withdraw from "./pages/users/Withdrawals";
 import KYC from "./pages/users/KYC";
+import UserDepositDetails from "./pages/users/DepositDetails";
 
 
 function App() {
@@ -315,6 +316,11 @@ function App() {
               <Route
                 path="/user/deposits"
                 element={<Deposit />}
+              />
+
+              <Route
+                path="/user/deposits/:depositId"
+                element={<UserDepositDetails />}
               />
 
               {/* Withdraw */}
