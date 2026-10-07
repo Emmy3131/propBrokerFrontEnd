@@ -7,6 +7,7 @@ import {
   FaExchangeAlt,
   FaCog,
   FaBell,
+  FaCreditCard,
   FaCheckCircle,
   FaFileAlt,
 } from "react-icons/fa";
