@@ -198,7 +198,7 @@ function App() {
               {/* Deposits */}
 
               <Route
-                path="/admin/deposits"
+                path="/deposits"
                 element={<Deposits />}
               />
 
