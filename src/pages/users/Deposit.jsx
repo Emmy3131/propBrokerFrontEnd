@@ -460,78 +460,73 @@ const Deposit = () => {
   =====================================================
   */
 
-  const handleSubmitPayment = async (event) => {
+ const handleSubmitPayment = async (event) => {
     event.preventDefault();
 
     setError("");
     setSuccess("");
 
     if (!deposit?.depositId) {
-      setError("Deposit information is missing.");
-      return;
+        setError("Deposit information is missing.");
+        return;
     }
 
-    if (
-      !transactionReference.trim()
-    ) {
-      setError(
-        "Please enter the transaction reference from your payment."
-      );
-      return;
+    if (!transactionReference.trim()) {
+        setError(
+            "Please enter the transaction reference from your payment."
+        );
+        return;
     }
 
     try {
-      setSubmittingPayment(true);
+        setSubmittingPayment(true);
 
-      const response = await api.patch(
-        `/deposits/${deposit.depositId}/submit`,
-        {
-          transactionReference:
-            transactionReference.trim(),
+        const response = await api.post(
+            `/deposits/${deposit.depositId}/submit`,
+            {
+                transactionReference:
+                    transactionReference.trim(),
 
-          userNote: userNote.trim() || undefined,
-        }
-      );
-
-      const updatedDeposit =
-        response?.data?.data || null;
-
-      if (updatedDeposit) {
-        setDeposit((previous) => ({
-          ...previous,
-          ...updatedDeposit,
-        }));
-      }
-
-      setSuccess(
-        "Payment submitted successfully. Your deposit is now awaiting admin review."
-      );
-
-      /*
-      Give the user time to see the confirmation.
-      */
-
-      setTimeout(() => {
-        navigate(
-          `/user/deposits/${deposit.depositId}`
+                userNote:
+                    userNote.trim() || undefined,
+            }
         );
-      }, 1200);
+
+        const updatedDeposit =
+            response?.data?.data || null;
+
+        if (updatedDeposit) {
+            setDeposit((previous) => ({
+                ...previous,
+                ...updatedDeposit,
+            }));
+        }
+
+        setSuccess(
+            "Payment submitted successfully. Your deposit is now awaiting admin review."
+        );
+
+        setTimeout(() => {
+            navigate(
+                `/user/deposits/${deposit.depositId}`
+            );
+        }, 1200);
     } catch (err) {
-      console.error(
-        "Submit payment error:",
-        err
-      );
+        console.error(
+            "Submit payment error:",
+            err
+        );
 
-      const message =
-        err?.response?.data?.message ||
-        err?.response?.data?.error ||
-        "Unable to submit your payment. Please try again.";
+        const message =
+            err?.response?.data?.message ||
+            err?.response?.data?.error ||
+            "Unable to submit your payment. Please try again.";
 
-      setError(message);
+        setError(message);
     } finally {
-      setSubmittingPayment(false);
+        setSubmittingPayment(false);
     }
-  };
+};
 
   /*
   =====================================================
@@ -664,8 +659,8 @@ const Deposit = () => {
 
               <div
                 className={`w-9 h-9 rounded-full flex items-center justify-center font-bold ${step >= 1
-                    ? "bg-brand-500 text-white"
-                    : "bg-surface-800 text-surface-500"
+                  ? "bg-brand-500 text-white"
+                  : "bg-surface-800 text-surface-500"
                   }`}
               >
                 {step > 1 ? <FaCheck /> : "1"}
@@ -689,8 +684,8 @@ const Deposit = () => {
 
               <div
                 className={`w-9 h-9 rounded-full flex items-center justify-center font-bold ${step >= 2
-                    ? "bg-brand-500 text-white"
-                    : "bg-surface-800 text-surface-500"
+                  ? "bg-brand-500 text-white"
+                  : "bg-surface-800 text-surface-500"
                   }`}
               >
                 2
@@ -806,8 +801,8 @@ const Deposit = () => {
                             handleCurrencyChange(item)
                           }
                           className={`p-4 rounded-xl border text-left transition ${currency === item
-                              ? "border-brand-500 bg-brand-500/10"
-                              : "border-surface-700 bg-surface-950 hover:border-surface-600"
+                            ? "border-brand-500 bg-brand-500/10"
+                            : "border-surface-700 bg-surface-950 hover:border-surface-600"
                             }`}
                         >
 
@@ -827,8 +822,8 @@ const Deposit = () => {
 
                             <span
                               className={`w-5 h-5 rounded-full border flex items-center justify-center ${currency === item
-                                  ? "border-brand-500"
-                                  : "border-surface-600"
+                                ? "border-brand-500"
+                                : "border-surface-600"
                                 }`}
                             >
                               {currency === item && (
@@ -909,8 +904,8 @@ const Deposit = () => {
 
                         <span
                           className={`w-2 h-2 rounded-full ${wallet?.status === "active"
-                              ? "bg-success-500"
-                              : "bg-danger-500"
+                            ? "bg-success-500"
+                            : "bg-danger-500"
                             }`}
                         />
 
@@ -1043,8 +1038,8 @@ const Deposit = () => {
                                 )
                               }
                               className={`w-full text-left rounded-xl border p-4 transition ${isSelected
-                                  ? "border-brand-500 bg-brand-500/10"
-                                  : "border-surface-700 bg-surface-950 hover:border-surface-600"
+                                ? "border-brand-500 bg-brand-500/10"
+                                : "border-surface-700 bg-surface-950 hover:border-surface-600"
                                 }`}
                             >
 
@@ -1052,8 +1047,8 @@ const Deposit = () => {
 
                                 <div
                                   className={`w-11 h-11 rounded-xl flex items-center justify-center ${isSelected
-                                      ? "bg-brand-500/20 text-brand-400"
-                                      : "bg-surface-800 text-surface-400"
+                                    ? "bg-brand-500/20 text-brand-400"
+                                    : "bg-surface-800 text-surface-400"
                                     }`}
                                 >
                                   <Icon />
@@ -1085,8 +1080,8 @@ const Deposit = () => {
 
                                 <div
                                   className={`w-5 h-5 rounded-full border flex items-center justify-center ${isSelected
-                                      ? "border-brand-500"
-                                      : "border-surface-600"
+                                    ? "border-brand-500"
+                                    : "border-surface-600"
                                     }`}
                                 >
                                   {isSelected && (
