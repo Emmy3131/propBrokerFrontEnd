@@ -57,6 +57,7 @@ import Deposits from "./pages/Admin/Deposits";
 import AdminDepositDetails from "./pages/Admin/AdminDepositeDetails";
 import AdminWithdrawals from "./pages/Admin/Withdrawals";
 import AdminWithdrawalDetails from "./pages/Admin/AdminWithdrawalDetails";
+import PaymentMethods from "./pages/Admin/PaymentMethod";
 
 // =====================================================
 // USER PAGES
@@ -193,6 +194,13 @@ function App() {
               <Route
                 path="/admin/users/:userId/details"
                 element={<AdminUserDetails />}
+              />
+
+               {/* Deposits */}
+
+              <Route
+                path="/admin/payment-methods"
+                element={<PaymentMethods />}
               />
 
               {/* Deposits */}

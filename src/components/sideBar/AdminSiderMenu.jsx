@@ -58,7 +58,14 @@ const AdminSidebarMenu = ({ onNavigate }) => {
         />
 
         <MenuItem
-          to="/adminWihdrawal"
+          to="/admin/payment-methods"
+          title="Payment Methods"
+          icon={<FaCreditCard />}
+          onClick={onNavigate}
+        />
+
+        <MenuItem
+          to="/admin/withdrawals"
           title="Withdrawals"
           icon={<FaWallet />}
           onClick={onNavigate}
@@ -104,3 +111,11 @@ const AdminSidebarMenu = ({ onNavigate }) => {
 };
 
 export default AdminSidebarMenu;
+
+<Link
+    to="/admin/payment-methods"
+    className="..."
+>
+    <FaCreditCard />
+    <span>Payment Methods</span>
+</Link>
