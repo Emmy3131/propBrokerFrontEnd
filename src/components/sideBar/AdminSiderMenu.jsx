@@ -111,11 +111,3 @@ const AdminSidebarMenu = ({ onNavigate }) => {
 };
 
 export default AdminSidebarMenu;
-
-<Link
-    to="/admin/payment-methods"
-    className="..."
->
-    <FaCreditCard />
-    <span>Payment Methods</span>
-</Link>
