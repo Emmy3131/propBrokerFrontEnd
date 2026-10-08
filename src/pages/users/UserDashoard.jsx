@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   FaWallet,
   FaArrowDown,
@@ -37,7 +37,7 @@ const UserDashboard = () => {
 
         setError(
           err.response?.data?.message ||
-            "Unable to load your dashboard."
+          "Unable to load your dashboard."
         );
       } finally {
         setLoading(false);
@@ -46,6 +46,25 @@ const UserDashboard = () => {
 
     fetchDashboard();
   }, []);
+
+  // =========================================================
+  // RECENT ACTIVITY
+  // =========================================================
+
+ const recentActivity = useMemo(() => {
+  const activity = Array.isArray(dashboard?.recentActivity)
+    ? dashboard.recentActivity
+    : [];
+
+  return activity
+    .sort((a, b) => {
+      return (
+        new Date(b.createdAt || 0) -
+        new Date(a.createdAt || 0)
+      );
+    })
+    .slice(0, 4);
+}, [dashboard]);
 
   // =========================================================
   // LOADING
@@ -139,14 +158,21 @@ const UserDashboard = () => {
   const user = dashboard?.user || {};
   const wallet = dashboard?.wallet || {};
 
-  const firstName = user?.name?.split(" ")[0] || "Trader";
+  const firstName =
+    user?.name?.split(" ")[0] || "Trader";
 
   const balance = Number(wallet?.availableBalance || 0);
 
-  const formattedBalance = balance.toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
+  const formattedBalance = Number.isFinite(balance)
+    ? balance.toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })
+    : "0.00";
+
+  // =========================================================
+  // RENDER
+  // =========================================================
 
   return (
     <div className="space-y-6">
@@ -221,7 +247,7 @@ const UserDashboard = () => {
               </p>
 
               <p className="mt-2 text-3xl font-bold tracking-tight text-white">
-                {wallet.currency || "$"} {formattedBalance}
+                {wallet.currency || "USD"} {formattedBalance}
               </p>
 
               <p className="mt-2 text-xs text-surface-500">
@@ -320,7 +346,7 @@ const UserDashboard = () => {
             </h2>
 
             <p className="mt-1 text-sm text-surface-400">
-              Your latest account activity.
+              Your latest deposits and withdrawals.
             </p>
           </div>
 
@@ -340,43 +366,122 @@ const UserDashboard = () => {
           </Link>
         </div>
 
-        <div className="p-5 sm:p-6">
-          <div
-            className="
-              flex flex-col
-              items-center
-              justify-center
-              rounded-xl
-              border border-dashed
-              border-surface-700
-              bg-surface-950/30
-              px-6 py-10
-              text-center
-            "
-          >
-            <div
-              className="
-                flex h-11 w-11
-                items-center justify-center
-                rounded-xl
-                bg-surface-800
-                text-surface-500
-              "
-            >
-              <FaClock />
+        <div className="divide-y divide-surface-700">
+          {recentActivity.length > 0 ? (
+            recentActivity.map((activity) => (
+              <ActivityRow
+                key={`${activity.type}-${activity.id}`}
+                activity={activity}
+              />
+            ))
+          ) : (
+            <div className="flex flex-col items-center justify-center px-6 py-10 text-center">
+              <div
+                className="
+                  flex h-11 w-11
+                  items-center justify-center
+                  rounded-xl
+                  bg-surface-800
+                  text-surface-500
+                "
+              >
+                <FaClock />
+              </div>
+
+              <h3 className="mt-3 text-sm font-medium text-surface-300">
+                No recent activity
+              </h3>
+
+              <p className="mt-1 max-w-sm text-xs leading-5 text-surface-500">
+                Your deposits and withdrawals will appear here.
+              </p>
             </div>
-
-            <h3 className="mt-3 text-sm font-medium text-surface-300">
-              No recent activity
-            </h3>
-
-            <p className="mt-1 max-w-sm text-xs leading-5 text-surface-500">
-              Deposits, withdrawals and other account activity
-              will appear here.
-            </p>
-          </div>
+          )}
         </div>
       </section>
+    </div>
+  );
+};
+
+// =========================================================
+// ACTIVITY ROW
+// =========================================================
+
+const ActivityRow = ({ activity }) => {
+  const isDeposit = activity.type === "deposit";
+
+  const amount = parseAmount(activity.amount);
+
+  const formattedAmount = amount.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+
+  const status = formatStatus(activity.status);
+
+  return (
+    <div
+      className="
+        flex items-center justify-between
+        gap-4
+        px-5 py-4
+        sm:px-6
+      "
+    >
+      <div className="flex min-w-0 items-center gap-3">
+        <div
+          className={`
+            flex h-10 w-10 shrink-0
+            items-center justify-center
+            rounded-xl
+            ${
+              isDeposit
+                ? "bg-success-500/10 text-success-400"
+                : "bg-warning-500/10 text-warning-400"
+            }
+          `}
+        >
+          {isDeposit ? <FaArrowDown /> : <FaArrowUp />}
+        </div>
+
+        <div className="min-w-0">
+          <p className="truncate text-sm font-medium text-white">
+            {isDeposit ? "Deposit" : "Withdrawal"}
+          </p>
+
+          <p className="mt-0.5 text-xs text-surface-500">
+            {formatDate(activity.createdAt)}
+          </p>
+        </div>
+      </div>
+
+      <div className="shrink-0 text-right">
+        <p
+          className={`
+            text-sm font-semibold
+            ${
+              isDeposit
+                ? "text-success-400"
+                : "text-warning-400"
+            }
+          `}
+        >
+          {isDeposit ? "+" : "-"}
+          {activity.currency || ""} {formattedAmount}
+        </p>
+
+        <span
+          className={`
+            mt-1 inline-flex
+            rounded-full
+            px-2 py-0.5
+            text-[10px] font-medium
+            ${getStatusClass(activity.status)}
+          `}
+        >
+          {status}
+        </span>
+      </div>
     </div>
   );
 };
@@ -510,6 +615,91 @@ const AccountStatus = ({ status }) => {
       {current.label}
     </div>
   );
+};
+
+// =========================================================
+// HELPERS
+// =========================================================
+
+const parseAmount = (value) => {
+  if (value === null || value === undefined) {
+    return 0;
+  }
+
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : 0;
+  }
+
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  if (
+    typeof value === "object" &&
+    value.$numberDecimal !== undefined
+  ) {
+    const parsed = Number(value.$numberDecimal);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  return 0;
+};
+
+const formatDate = (date) => {
+  if (!date) return "No date";
+
+  const parsedDate = new Date(date);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return "No date";
+  }
+
+  return parsedDate.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+};
+
+const formatStatus = (status) => {
+  if (!status) return "Pending";
+
+  return status
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+};
+
+const getStatusClass = (status) => {
+  const normalized = status?.toLowerCase();
+
+  if (
+    normalized === "successful" ||
+    normalized === "completed" ||
+    normalized === "approved"
+  ) {
+    return "bg-success-500/10 text-success-400";
+  }
+
+  if (
+    normalized === "pending" ||
+    normalized === "submitted" ||
+    normalized === "under_review" ||
+    normalized === "processing"
+  ) {
+    return "bg-warning-500/10 text-warning-400";
+  }
+
+  if (
+    normalized === "rejected" ||
+    normalized === "cancelled" ||
+    normalized === "failed" ||
+    normalized === "expired"
+  ) {
+    return "bg-danger-500/10 text-danger-400";
+  }
+
+  return "bg-surface-800 text-surface-400";
 };
 
 export default UserDashboard;

@@ -161,8 +161,37 @@ const DepositDetails = () => {
             );
     };
 
+    const getNumericValue = (value) => {
+        if (value === null || value === undefined) {
+            return 0;
+        }
+
+        if (typeof value === "number") {
+            return Number.isFinite(value) ? value : 0;
+        }
+
+        if (typeof value === "string") {
+            const parsed = Number(value);
+            return Number.isFinite(parsed) ? parsed : 0;
+        }
+
+        // MongoDB Decimal128 can arrive as:
+        // { $numberDecimal: "100.00" }
+
+        if (
+            typeof value === "object" &&
+            value.$numberDecimal !== undefined
+        ) {
+            const parsed = Number(value.$numberDecimal);
+
+            return Number.isFinite(parsed) ? parsed : 0;
+        }
+
+        return 0;
+    };
+
     const formatAmount = () => {
-        const amount = Number(deposit?.amount || 0);
+        const amount = getNumericValue(deposit?.amount);
 
         return amount.toLocaleString("en-US", {
             minimumFractionDigits: 2,
