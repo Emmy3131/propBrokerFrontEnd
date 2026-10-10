@@ -574,6 +574,10 @@ const Withdraw = () => {
                                         </option>
                                     ))}
                                 </select>
+  
+
+                                     {/* CURRENCY ERROR  */}
+
 
                                 {form.currency !== walletCurrency && (
                                     <div className="mt-2 flex items-start gap-2 rounded-lg border border-warning-500/20 bg-warning-500/10 p-3">
