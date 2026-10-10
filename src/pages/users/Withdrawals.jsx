@@ -198,6 +198,7 @@ const Withdraw = () => {
         setError("");
         setSuccess("");
         setWithdrawal(null);
+        
 
         const validationError = validateForm();
 
@@ -407,7 +408,7 @@ const Withdraw = () => {
                 <div className="space-y-6">
                     {/* WALLET CARD */}
 
-                    <div className="overflow-hidden rounded-2xl border border-surface-700 bg-surface-900">
+                    {/* <div className="overflow-hidden rounded-2xl border border-surface-700 bg-surface-900">
                         <div className="border-b border-surface-700 p-5 sm:p-6">
                             <div className="flex items-center gap-3">
                                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-500/10">
@@ -451,7 +452,7 @@ const Withdraw = () => {
                                 valueClass="text-surface-100"
                             />
                         </div>
-                    </div>
+                    </div> */}
 
                     {/* WITHDRAWAL FORM */}
 
