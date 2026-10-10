@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
+import toast from "react-hot-toast";
 
 const Login = () => {
     const navigate = useNavigate();
@@ -23,6 +24,7 @@ const Login = () => {
         });
     };
 
+
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -30,35 +32,17 @@ const Login = () => {
         setLoading(true);
 
         try {
-            /*
-            =================================================
-            LOGIN
-            =================================================
-            */
-
             const response = await login(form);
 
             console.log("LOGIN RESULT:", response);
 
-            /*
-            =================================================
-            TWO-FACTOR AUTHENTICATION REQUIRED
-            =================================================
-            */
-
+            // Two-factor authentication
             if (response?.requiresTwoFactor) {
                 if (!response?.challenge) {
                     throw new Error(
                         "Two-factor authentication is required, but no challenge was returned."
                     );
                 }
-
-                /*
-                The access token does NOT exist yet.
-
-                We pass the temporary challenge to the
-                2FA verification page.
-                */
 
                 navigate("/two-factor", {
                     replace: true,
@@ -71,12 +55,7 @@ const Login = () => {
                 return;
             }
 
-            /*
-            =================================================
-            NORMAL LOGIN
-            =================================================
-            */
-
+            // Verify that user information exists
             const user = response?.user;
 
             if (!user) {
@@ -85,13 +64,10 @@ const Login = () => {
                 );
             }
 
-            /*
-            =================================================
-            ADMIN
-            =================================================
-            */
-
+            // Admin login
             if (user.role === "admin") {
+                toast.success("Login successful!");
+
                 navigate("/adminDashboard", {
                     replace: true,
                 });
@@ -99,13 +75,10 @@ const Login = () => {
                 return;
             }
 
-            /*
-            =================================================
-            NORMAL USER
-            =================================================
-            */
-
+            // Normal user login
             if (user.role === "user") {
+                toast.success("Login successful!");
+
                 navigate("/user/dashboard", {
                     replace: true,
                 });
@@ -113,28 +86,25 @@ const Login = () => {
                 return;
             }
 
-            /*
-            =================================================
-            UNKNOWN ROLE
-            =================================================
-            */
-
+            // Unsupported role
             throw new Error(
                 "Your account has an invalid or unsupported role."
             );
-
         } catch (error) {
             console.error("Login error:", error);
 
-            setError(
+            const message =
                 error?.response?.data?.message ||
                 error?.message ||
-                "Unable to login. Please try again."
-            );
+                "Unable to login. Please try again.";
+
+            setError(message);
+            toast.error(message);
         } finally {
             setLoading(false);
         }
     };
+
 
     return (
         <div className="flex min-h-screen items-center justify-center px-6">
