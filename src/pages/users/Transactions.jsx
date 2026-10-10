@@ -313,30 +313,7 @@ const Transactions = () => {
     }, [filteredTransactions, currentPage]);
 
     /*
-    =====================================================
-    SUMMARY
-    =====================================================
-    */
-
-    const summary = useMemo(() => {
-        return {
-            total: transactions.length,
-
-            deposits: transactions.filter(
-                (transaction) => transaction.type === "deposit"
-            ).length,
-
-            withdrawals: transactions.filter(
-                (transaction) => transaction.type === "withdrawal"
-            ).length,
-
-            pending: transactions.filter((transaction) =>
-                ["pending", "processing", "under_review"].includes(
-                    transaction.status
-                )
-            ).length,
-        };
-    }, [transactions]);
+ 
 
     /*
     =====================================================
@@ -441,41 +418,8 @@ const Transactions = () => {
                 </div>
             </div>
 
-            {/* =================================================
-          SUMMARY CARDS
-      ================================================= */}
+            
 
-            <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-                <SummaryCard
-                    icon={FaExchangeAlt}
-                    label="All Transactions"
-                    value={summary.total}
-                />
-
-                <SummaryCard
-                    icon={FaArrowDown}
-                    label="Deposits"
-                    value={summary.deposits}
-                    iconClass="text-success-400"
-                    iconBg="bg-success-500/10"
-                />
-
-                <SummaryCard
-                    icon={FaArrowUp}
-                    label="Withdrawals"
-                    value={summary.withdrawals}
-                    iconClass="text-brand-400"
-                    iconBg="bg-brand-500/10"
-                />
-
-                <SummaryCard
-                    icon={FaClock}
-                    label="Pending"
-                    value={summary.pending}
-                    iconClass="text-warning-400"
-                    iconBg="bg-warning-500/10"
-                />
-            </div>
 
             {/* =================================================
           FILTER CARD
@@ -727,7 +671,7 @@ const TransactionRow = ({ transaction }) => {
                     </p>
 
                     <p className="mt-0.5 text-xs capitalize text-surface-500">
-                        {transaction.provider || "—"}
+                        {transaction.provider || " "}
                     </p>
                 </div>
 
