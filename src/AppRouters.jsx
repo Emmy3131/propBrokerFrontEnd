@@ -69,7 +69,6 @@ import Deposit from "./pages/users/Deposit";
 import Withdraw from "./pages/users/Withdrawals";
 import KYC from "./pages/users/KYC";
 import UserDepositDetails from "./pages/users/DepositDetails";
-import Extra from "./pages/users/extra"
 
 
 function App() {
@@ -352,11 +351,6 @@ function App() {
               <Route
                 path="/user/kyc"
                 element={<KYC />}
-              />
-
-              <Route
-                path="/user/extra"
-                element={<Extra />}
               />
 
             </Route>
