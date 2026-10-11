@@ -670,9 +670,9 @@ const TransactionRow = ({ transaction }) => {
                         )}
                     </p>
 
-                    <p className="mt-0.5 text-xs capitalize text-surface-500">
+                    {/* <p className="mt-0.5 text-xs capitalize text-surface-500">
                         {transaction.provider || " "}
-                    </p>
+                    </p> */}
                 </div>
 
                 {/* STATUS */}

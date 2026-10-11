@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import toast from "react-hot-toast"
 import { Link } from "react-router-dom";
 import {
     FaArrowDown,
@@ -38,6 +39,33 @@ const formatMoney = (value, currency = "USD") => {
         maximumFractionDigits: 2,
     }).format(amount);
 };
+
+
+const convertWalletCurrency = async (fromCurrency, toCurrency) => {
+    try {
+        const response = await api.post("/wallets/convert", {
+            fromCurrency,
+            toCurrency,
+        });
+
+        const conversion = response.data.data.conversion;
+
+        toast.success(
+            `Converted ${conversion.sourceAmount} ${conversion.fromCurrency} to ${conversion.convertedAmount} ${conversion.toCurrency}`
+        );
+
+        // Refresh the wallet data from the backend here.
+        return conversion;
+    } catch (error) {
+        const message =
+            error.response?.data?.message ||
+            "Currency conversion failed. Please try again.";
+
+        toast.error(message);
+        throw error;
+    }
+};
+
 
 const Withdraw = () => {
     const [wallet, setWallet] = useState(null);
@@ -198,7 +226,7 @@ const Withdraw = () => {
         setError("");
         setSuccess("");
         setWithdrawal(null);
-        
+
 
         const validationError = validateForm();
 
@@ -574,9 +602,9 @@ const Withdraw = () => {
                                         </option>
                                     ))}
                                 </select>
-  
 
-                                     {/* CURRENCY ERROR  */}
+
+                                {/* CURRENCY ERROR  */}
 
 
                                 {form.currency !== walletCurrency && (

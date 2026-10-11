@@ -145,6 +145,13 @@ const SidebarMenu = ({ onNavigate }) => {
           onClick={onNavigate}
         />
 
+         <MenuItem
+          to="/user/extra"
+          title="Extra"
+          icon={<FaUsers />}
+          onClick={onNavigate}
+        />
+
         <MenuItem
           to="/user/profile"
           title="Profile"
