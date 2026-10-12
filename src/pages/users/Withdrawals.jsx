@@ -292,7 +292,7 @@ const Withdraw = () => {
           <form onSubmit={handleSubmit} className="rounded-2xl border border-surface-700 bg-surface-900">
             <div className="border-b border-surface-700 p-5 sm:p-6">
               <h2 className="text-lg font-semibold text-surface-100">Withdrawal Details</h2>
-              <p className="mt-1 text-sm text-surface-400">Enter the withdrawal amount and destination details.</p>
+              <p className="mt-1 text-sm text-surface-400">Enter the withdrawal amount and Account details.</p>
             </div>
 
             <div className="space-y-6 p-5 sm:p-6">
@@ -317,30 +317,20 @@ const Withdraw = () => {
               </div>
 
               <div className="rounded-xl border border-surface-700 bg-surface-950 p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-medium text-surface-200">Estimated currency equivalent</p>
-                    <p className="mt-1 text-xs leading-5 text-surface-500">
-                      {form.currency === walletCurrency
-                        ? "Your selected currency matches your wallet currency."
-                        : `Based on your wallet's ${walletCurrency} balance and a live public exchange rate.`}
-                    </p>
-                  </div>
-                  <FaRotate className={`mt-1 shrink-0 text-brand-400 ${loadingRate ? "animate-spin" : ""}`} />
-                </div>
                 {form.currency === walletCurrency ? (
                   <p className="mt-3 text-xl font-semibold text-surface-100">{formatMoney(enteredAmount, form.currency)}</p>
                 ) : rate > 0 ? (
                   <>
-                    <p className="mt-3 text-xl font-semibold text-surface-100">{formatMoney(enteredAmount / rate, walletCurrency)} <span className="text-sm font-normal text-surface-400">wallet debit estimate</span></p>
+                    <p className="mt-3 text-xl font-semibold text-surface-100">{formatMoney(enteredAmount / rate, walletCurrency)}</p>
                     <p className="mt-1 text-sm text-surface-400">Equivalent: {formatMoney(enteredAmount, form.currency)}</p>
-                    <p className="mt-2 text-xs text-surface-500">Indicative rate: 1 {walletCurrency} = {rate.toFixed(6)} {form.currency}</p>
+                    <p className="mt-2 text-xs text-surface-500"> 1 {walletCurrency} = {rate.toFixed(6)} {form.currency}</p>
                   </>
                 ) : (
-                  <p className="mt-3 text-sm text-warning-300">{loadingRate ? "Loading live exchange rate..." : rateError || "Exchange rate unavailable. Try again shortly."}</p>
+                  <p className="mt-3 text-sm text-warning-300">{loadingRate ? "Loading live exchange rate..." 
+                    : rateError || "Exchange rate unavailable. Try again shortly."}</p>
                 )}
-                {rateDate && form.currency !== walletCurrency && <p className="mt-2 text-xs text-surface-600">Rate data: {rateDate}</p>}
-                <p className="mt-3 text-xs leading-5 text-surface-500">This is an estimate only. The backend's rate and balance validation determine the final withdrawal amount. This display does not convert or credit wallet funds.</p>
+                
+               
               </div>
 
               {quickAmounts.length > 0 && (
@@ -410,8 +400,7 @@ const Withdraw = () => {
             <div className="mt-5 space-y-5">
               <Step number="1" icon={<FaWallet />} title="Enter amount" description="Choose a supported currency and enter the amount you want to withdraw." />
               <Step number="2" icon={<FaRotate />} title="Review estimate" description="Check the live indicative exchange rate. It does not move funds." />
-              <Step number="3" icon={<FaShieldHalved />} title="Security review" description="The backend validates your balance and the request may be reviewed." />
-              <Step number="4" icon={<FaCheck />} title="Funds sent" description="The withdrawal is completed once the payout succeeds." />
+              <Step number="3" icon={<FaCheck />} title="Funds sent" description="The withdrawal is completed once the payout succeeds." />
             </div>
           </div>
 

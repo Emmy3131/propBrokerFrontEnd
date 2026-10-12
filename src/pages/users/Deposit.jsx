@@ -608,7 +608,7 @@ const Deposit = () => {
         <div className="text-center">
           <FaSpinner className="animate-spin text-3xl text-brand-500 mx-auto mb-4" />
           <p className="text-surface-300">
-            Loading your USD wallet and payment options...
+            Loading...
           </p>
         </div>
       </div>
@@ -638,9 +638,9 @@ const Deposit = () => {
               </h1>
             </div>
 
-            <p className="text-surface-400">
+            {/* <p className="text-surface-400">
               Add funds securely to your USD trading wallet.
-            </p>
+            </p> */}
           </div>
 
           <div className="flex items-center gap-2">
@@ -737,7 +737,7 @@ const Deposit = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
               <div className="bg-surface-900 border border-surface-800 rounded-2xl overflow-hidden">
-                <div className="px-6 py-5 border-b border-surface-800">
+                {/* <div className="px-6 py-5 border-b border-surface-800">
                   <h2 className="text-lg font-semibold">
                     Create USD Deposit
                   </h2>
@@ -745,7 +745,7 @@ const Deposit = () => {
                     Enter your deposit amount and choose a USD payment
                     method.
                   </p>
-                </div>
+                </div> */}
 
                 <form
                   onSubmit={handleCreateDeposit}
@@ -753,74 +753,7 @@ const Deposit = () => {
                 >
                   {/* WALLET */}
 
-                  <div className="rounded-xl border border-surface-700 bg-surface-950 p-5">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-11 h-11 rounded-xl bg-brand-500/10 flex items-center justify-center">
-                          <FaWallet className="text-brand-400" />
-                        </div>
-
-                        <div>
-                          <p className="text-sm text-surface-400">
-                            Destination Wallet
-                          </p>
-                          <p className="font-semibold">USD Wallet</p>
-                          <p className="text-xs text-surface-500 mt-1">
-                            Your single account wallet
-                          </p>
-                        </div>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={handleRefreshWallet}
-                        disabled={refreshingWallet}
-                        className="p-2 rounded-lg hover:bg-surface-800 transition text-surface-400 hover:text-white disabled:opacity-50"
-                        title="Refresh wallet"
-                      >
-                        <FaSyncAlt
-                          className={
-                            refreshingWallet ? "animate-spin" : ""
-                          }
-                        />
-                      </button>
-                    </div>
-
-                    <div className="mt-5 pt-5 border-t border-surface-800">
-                      <p className="text-sm text-surface-500">
-                        Available Balance
-                      </p>
-
-                      <p className="text-2xl font-bold mt-1">
-                        {formatMoney(wallet?.availableBalance || 0)}
-                      </p>
-
-                      <div className="mt-3 flex items-center gap-2 text-xs">
-                        <span
-                          className={`w-2 h-2 rounded-full ${
-                            wallet?.status === "active"
-                              ? "bg-success-500"
-                              : "bg-danger-500"
-                          }`}
-                        />
-
-                        <span className="text-surface-400">
-                          Wallet {wallet?.status || "unavailable"}
-                        </span>
-                      </div>
-
-                      {wallet?.lockedBalance !== undefined && (
-                        <div className="mt-3 flex justify-between text-sm">
-                          <span className="text-surface-500">
-                            Locked Balance
-                          </span>
-                          <span className="text-surface-300">
-                            {formatMoney(wallet.lockedBalance)}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                 
 
                   {/* AMOUNT */}
 
@@ -850,10 +783,6 @@ const Deposit = () => {
                     </div>
 
                     <div className="flex flex-wrap justify-between gap-2 mt-2">
-                      <p className="text-xs text-surface-500">
-                        Your deposit will always be submitted in USD.
-                      </p>
-
                       {amount && (
                         <p className="text-xs text-brand-400 font-medium">
                           {formattedAmount}
@@ -866,16 +795,6 @@ const Deposit = () => {
 
                   <div className="rounded-xl border border-surface-700 bg-surface-950 p-5">
                     <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-semibold">
-                          Currency Converter
-                        </p>
-                        <p className="text-xs text-surface-500 mt-1">
-                          Indicative exchange rate only. Your deposit
-                          remains in USD.
-                        </p>
-                      </div>
-
                       <div className="sm:w-48">
                         <label
                           htmlFor="conversionCurrency"
@@ -944,19 +863,12 @@ const Deposit = () => {
                         </p>
                       )}
 
-                      {!exchangeRateError && exchangeRateDate && (
+                      {/* {!exchangeRateError && exchangeRateDate && (
                         <p className="text-xs text-surface-600 mt-2">
                           Rate source updated: {exchangeRateDate}
                         </p>
-                      )}
+                      )} */}
                     </div>
-
-                    <p className="text-xs text-surface-500 leading-relaxed mt-3">
-                      This conversion is only an estimate. It does not
-                      convert your deposit or change your wallet
-                      currency. Your wallet is credited only after
-                      admin approval.
-                    </p>
                   </div>
 
                   {/* PAYMENT METHODS */}
@@ -1055,24 +967,7 @@ const Deposit = () => {
                     )}
                   </div>
 
-                  {/* SECURITY NOTE */}
-
-                  <div className="rounded-xl bg-surface-950 border border-surface-800 p-4">
-                    <div className="flex items-start gap-3">
-                      <FaShieldAlt className="text-success-400 mt-1 shrink-0" />
-                      <div>
-                        <p className="font-medium text-sm">
-                          Secure Deposit Process
-                        </p>
-                        <p className="text-xs text-surface-500 mt-1 leading-relaxed">
-                          Your deposit will not immediately credit your
-                          wallet. After payment, submit your transaction
-                          details for verification. Your wallet is
-                          credited only after admin approval.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+                
 
                   {/* SUBMIT */}
 
@@ -1182,7 +1077,7 @@ const Deposit = () => {
                 </div>
 
                 <p className="text-sm text-surface-400 leading-relaxed">
-                  Never share your password, OTP, card PIN, or account
+                  Never share your password, OTP, or account
                   credentials with anyone claiming to be support.
                 </p>
               </div>
