@@ -1,3 +1,4 @@
+
 import { useEffect, useMemo, useState } from "react";
 
 import {
@@ -22,17 +23,20 @@ import {
 } from "react-icons/fa";
 
 import { Link, useNavigate } from "react-router-dom";
-
 import api from "../../library/api";
 
-const CURRENCIES = ["USD", "NGN", "CAD", "EUR"];
+/*
+=====================================================
+CURRENCY CONFIGURATION
 
-const currencySymbols = {
-  USD: "$",
-  NGN: "₦",
-  CAD: "C$",
-  EUR: "€",
-};
+Deposits and the user's wallet are USD only.
+Other currencies are available only in the converter.
+=====================================================
+*/
+
+const DEPOSIT_CURRENCY = "USD";
+
+const CONVERSION_CURRENCIES = ["USD", "NGN", "CAD", "EUR"];
 
 const currencyNames = {
   USD: "US Dollar",
@@ -45,28 +49,29 @@ const formatMoney = (amount, currency = "USD") => {
   const numericAmount = Number(amount || 0);
 
   if (!Number.isFinite(numericAmount)) {
-    return `${currencySymbols[currency] || ""}0.00`;
+    return "$0.00";
   }
 
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(numericAmount);
+  try {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(numericAmount);
+  } catch {
+    return `$${numericAmount.toFixed(2)}`;
+  }
 };
 
 const getPaymentMethodIcon = (type) => {
   switch (type) {
     case "bank_transfer":
       return FaUniversity;
-
     case "crypto":
       return FaBitcoin;
-
     case "mobile_money":
       return FaMobileAlt;
-
     default:
       return FaCreditCard;
   }
@@ -76,13 +81,10 @@ const getPaymentMethodLabel = (type) => {
   switch (type) {
     case "bank_transfer":
       return "Bank Transfer";
-
     case "crypto":
       return "Cryptocurrency";
-
     case "mobile_money":
       return "Mobile Money";
-
     default:
       return "Other Payment";
   }
@@ -96,7 +98,7 @@ const Deposit = () => {
   STEP
   =====================================================
   1 = Create deposit
-  2 = Payment instructions / submit payment
+  2 = Payment instructions and submit payment
   =====================================================
   */
 
@@ -104,19 +106,29 @@ const Deposit = () => {
 
   /*
   =====================================================
-  FORM
+  DEPOSIT FORM
+
+  The actual deposit currency is always USD.
   =====================================================
   */
 
   const [amount, setAmount] = useState("");
-  // The selected currency is the actual deposit currency sent to the backend.
-  const [currency, setCurrency] = useState("USD");
 
-  // Conversion is display-only; it never changes the deposit amount/currency.
-  const [conversionCurrency, setConversionCurrency] = useState("NGN");
+  /*
+  =====================================================
+  DISPLAY-ONLY CURRENCY CONVERTER
+
+  Conversion never changes the deposit amount or currency.
+  =====================================================
+  */
+
+  const [conversionCurrency, setConversionCurrency] =
+    useState("NGN");
+
   const [exchangeRates, setExchangeRates] = useState({});
   const [exchangeRateDate, setExchangeRateDate] = useState("");
-  const [loadingExchangeRates, setLoadingExchangeRates] = useState(false);
+  const [loadingExchangeRates, setLoadingExchangeRates] =
+    useState(false);
   const [exchangeRateError, setExchangeRateError] = useState("");
 
   /*
@@ -134,16 +146,13 @@ const Deposit = () => {
 
   /*
   =====================================================
-  WALLET
+  SINGLE USD WALLET
   =====================================================
   */
 
   const [wallet, setWallet] = useState(null);
-
   const [loadingWallet, setLoadingWallet] = useState(true);
-
-  const [refreshingWallet, setRefreshingWallet] =
-    useState(false);
+  const [refreshingWallet, setRefreshingWallet] = useState(false);
 
   /*
   =====================================================
@@ -152,12 +161,8 @@ const Deposit = () => {
   */
 
   const [deposit, setDeposit] = useState(null);
-
-  const [creatingDeposit, setCreatingDeposit] =
-    useState(false);
-
-  const [submittingPayment, setSubmittingPayment] =
-    useState(false);
+  const [creatingDeposit, setCreatingDeposit] = useState(false);
+  const [submittingPayment, setSubmittingPayment] = useState(false);
 
   /*
   =====================================================
@@ -182,28 +187,26 @@ const Deposit = () => {
 
   /*
   =====================================================
-  FETCH WALLET
+  FETCH SINGLE USD WALLET
+
+  Do not send a currency query. The backend should return
+  or create the user's one USD wallet.
   =====================================================
   */
 
-  const fetchWallet = async (selectedCurrency = currency) => {
+  const fetchWallet = async () => {
     try {
       setError("");
 
-      if (!refreshingWallet) {
-        setLoadingWallet(true);
-      }
-
-      const response = await api.get("/wallets", {
-        params: {
-          currency: selectedCurrency,
-        },
-      });
+      const response = await api.get("/wallets");
 
       const walletData = response?.data?.data?.wallet;
 
       if (!walletData) {
         setWallet(null);
+        setError(
+          "Your USD wallet could not be found. Please refresh or contact support."
+        );
         return;
       }
 
@@ -211,12 +214,12 @@ const Deposit = () => {
     } catch (err) {
       console.error("Wallet loading error:", err);
 
-      const message =
-        err?.response?.data?.message ||
-        "Unable to load your wallet. Please try again.";
-
-      setError(message);
       setWallet(null);
+
+      setError(
+        err?.response?.data?.message ||
+          "Unable to load your USD wallet. Please try again."
+      );
     } finally {
       setLoadingWallet(false);
       setRefreshingWallet(false);
@@ -225,51 +228,48 @@ const Deposit = () => {
 
   /*
   =====================================================
-  FETCH PAYMENT METHODS
+  FETCH USD PAYMENT METHODS
   =====================================================
   */
 
-  const fetchPaymentMethods = async (
-    selectedCurrency = currency
-  ) => {
+  const fetchPaymentMethods = async () => {
     try {
       setLoadingPaymentMethods(true);
-      setError("");
 
-      const response = await api.get(
-        "/deposits/payment-methods",
-        {
-          params: {
-            currency: selectedCurrency,
-          },
-        }
-      );
+      const response = await api.get("/deposits/payment-methods", {
+        params: {
+          currency: DEPOSIT_CURRENCY,
+        },
+      });
 
       const methods =
         response?.data?.data?.paymentMethods || [];
 
-      setPaymentMethods(methods);
-
-      /*
-      Automatically select first available method.
-      */
-
-      if (methods.length > 0) {
-        setSelectedPaymentMethod(methods[0]);
-      } else {
-        setSelectedPaymentMethod(null);
-      }
-    } catch (err) {
-      console.error(
-        "Payment methods loading error:",
-        err
+      // Only show USD payment methods.
+      const usdMethods = methods.filter(
+        (method) => method.currency === DEPOSIT_CURRENCY
       );
 
-      const message =
-        err?.response?.data?.message ||
-        "Unable to load available payment methods.";
+      setPaymentMethods(usdMethods);
 
-      setError(message);
+      setSelectedPaymentMethod((previous) => {
+        if (
+          previous?._id &&
+          usdMethods.some((method) => method._id === previous._id)
+        ) {
+          return previous;
+        }
+
+        return usdMethods[0] || null;
+      });
+    } catch (err) {
+      console.error("Payment methods loading error:", err);
+
+      setError(
+        err?.response?.data?.message ||
+          "Unable to load available USD payment methods."
+      );
+
       setPaymentMethods([]);
       setSelectedPaymentMethod(null);
     } finally {
@@ -279,11 +279,10 @@ const Deposit = () => {
 
   /*
   =====================================================
-  LIVE EXCHANGE RATES (DISPLAY ONLY)
-  =====================================================
-  The API returns rates relative to the currently selected deposit currency.
-  These rates are estimates for display; the backend deposit payload continues
-  to use only `amount` and `currency` selected in the amount input.
+  LIVE EXCHANGE RATES
+
+  Rates are fetched relative to USD.
+  They are for display only.
   =====================================================
   */
 
@@ -296,29 +295,31 @@ const Deposit = () => {
 
       try {
         const response = await fetch(
-          `https://open.er-api.com/v6/latest/${currency}`,
+          "https://open.er-api.com/v6/latest/USD",
           { signal: controller.signal }
         );
 
         if (!response.ok) {
-          throw new Error("The exchange-rate service is unavailable.");
+          throw new Error("Exchange-rate service unavailable.");
         }
 
         const data = await response.json();
 
         if (data?.result !== "success" || !data?.rates) {
-          throw new Error("A live exchange rate could not be retrieved.");
+          throw new Error("Exchange rates could not be retrieved.");
         }
 
         setExchangeRates(data.rates);
         setExchangeRateDate(data.time_last_update_utc || "");
       } catch (err) {
         if (err.name === "AbortError") return;
+
         console.error("Exchange-rate loading error:", err);
+
         setExchangeRates({});
         setExchangeRateDate("");
         setExchangeRateError(
-          "Live exchange rates are temporarily unavailable. You can still create a deposit in the selected deposit currency."
+          "Live exchange rates are temporarily unavailable. You can still create a USD deposit."
         );
       } finally {
         if (!controller.signal.aborted) {
@@ -328,8 +329,9 @@ const Deposit = () => {
     };
 
     fetchExchangeRates();
+
     return () => controller.abort();
-  }, [currency]);
+  }, []);
 
   /*
   =====================================================
@@ -338,36 +340,9 @@ const Deposit = () => {
   */
 
   useEffect(() => {
-    fetchWallet("USD");
-    fetchPaymentMethods("USD");
+    fetchWallet();
+    fetchPaymentMethods();
   }, []);
-
-  /*
-  =====================================================
-  CHANGE CURRENCY
-  =====================================================
-  */
-
-  const handleCurrencyChange = async (newCurrency) => {
-    if (!CURRENCIES.includes(newCurrency)) return;
-
-    setCurrency(newCurrency);
-    setAmount("");
-    setError("");
-    setSuccess("");
-
-    if (conversionCurrency === newCurrency) {
-      setConversionCurrency(CURRENCIES.find((item) => item !== newCurrency) || "NGN");
-    }
-
-    setSelectedPaymentMethod(null);
-    setRefreshingWallet(true);
-
-    await Promise.all([
-      fetchWallet(newCurrency),
-      fetchPaymentMethods(newCurrency),
-    ]);
-  };
 
   /*
   =====================================================
@@ -377,8 +352,7 @@ const Deposit = () => {
 
   const handleRefreshWallet = async () => {
     setRefreshingWallet(true);
-
-    await fetchWallet(currency);
+    await fetchWallet();
   };
 
   /*
@@ -390,52 +364,45 @@ const Deposit = () => {
   const handleAmountChange = (event) => {
     const value = event.target.value;
 
-    /*
-    Allow numbers with up to 2 decimal places.
-    */
-
     if (!/^\d*\.?\d{0,2}$/.test(value)) {
       return;
     }
 
     setAmount(value);
-
-    if (error) {
-      setError("");
-    }
-
-    if (success) {
-      setSuccess("");
-    }
+    setError("");
+    setSuccess("");
   };
 
   /*
   =====================================================
-  FORMATTED AMOUNT
+  FORMATTED AMOUNTS
   =====================================================
   */
 
-  const formattedAmount = useMemo(() => {
-    if (!amount) {
-      return formatMoney(0, currency);
-    }
-
-    return formatMoney(amount, currency);
-  }, [amount, currency]);
-
+  const formattedAmount = useMemo(
+    () => formatMoney(amount || 0, DEPOSIT_CURRENCY),
+    [amount]
+  );
 
   const convertedAmount = useMemo(() => {
     const numericAmount = Number(amount);
     const rate = Number(exchangeRates?.[conversionCurrency]);
 
-    if (!amount || !Number.isFinite(numericAmount) || !Number.isFinite(rate)) {
+    if (
+      !amount ||
+      !Number.isFinite(numericAmount) ||
+      !Number.isFinite(rate) ||
+      rate <= 0
+    ) {
       return null;
     }
 
     return numericAmount * rate;
   }, [amount, exchangeRates, conversionCurrency]);
 
-  const conversionRate = Number(exchangeRates?.[conversionCurrency]);
+  const conversionRate = Number(
+    exchangeRates?.[conversionCurrency]
+  );
 
   /*
   =====================================================
@@ -449,91 +416,77 @@ const Deposit = () => {
     setError("");
     setSuccess("");
 
-    /*
-    -----------------------------------------------------
-    VALIDATE AMOUNT
-    -----------------------------------------------------
-    */
-
-    if (!amount || Number(amount) <= 0) {
+    if (!amount || !Number.isFinite(Number(amount)) || Number(amount) <= 0) {
       setError("Please enter a valid deposit amount.");
       return;
     }
 
-    /*
-    -----------------------------------------------------
-    VALIDATE CURRENCY
-    -----------------------------------------------------
-    */
-
-    if (!CURRENCIES.includes(currency)) {
-      setError(
-        "This currency is not currently supported."
-      );
-      return;
-    }
-
-    /*
-    -----------------------------------------------------
-    VALIDATE PAYMENT METHOD
-    -----------------------------------------------------
-    */
-
     if (!selectedPaymentMethod?._id) {
-      setError(
-        "Please select an available payment method."
-      );
+      setError("Please select an available USD payment method.");
       return;
     }
 
-    /*
-    -----------------------------------------------------
-    CREATE
-    -----------------------------------------------------
-    */
+    if (selectedPaymentMethod.currency !== DEPOSIT_CURRENCY) {
+      setError("Only USD payment methods are supported.");
+      return;
+    }
+
+    if (wallet?.status !== "active") {
+      setError(
+        "Your USD wallet is unavailable or inactive. Please refresh your wallet or contact support."
+      );
+      return;
+    }
 
     try {
       setCreatingDeposit(true);
 
-      // Only submit the amount entered by the user and its selected deposit
-      // currency. The converted display amount is intentionally never sent.
+      /*
+      Always send USD.
+      The converter value is never sent to the backend.
+      */
+
       const response = await api.post("/deposits", {
         amount: String(amount),
-        currency,
+        currency: DEPOSIT_CURRENCY,
         paymentMethodId: selectedPaymentMethod._id,
       });
 
-      const depositData =
-        response?.data?.data || null;
+      const responseData = response?.data?.data;
 
-      if (!depositData) {
+      // Supports APIs that return either the deposit directly
+      // or an object containing { deposit }.
+      const depositData = responseData?.deposit || responseData;
+
+      if (!depositData || !(depositData.depositId || depositData._id)) {
         throw new Error(
-          "The server did not return deposit information."
+          "The server did not return valid deposit information."
         );
       }
 
-      setDeposit(depositData);
+      const normalizedDeposit = {
+        ...depositData,
+        depositId: depositData.depositId || depositData._id,
+        currency: DEPOSIT_CURRENCY,
+      };
 
+      setDeposit(normalizedDeposit);
       setStep(2);
 
       setSuccess(
-        "Deposit created successfully. Follow the payment instructions below."
+        "USD deposit created successfully. Follow the payment instructions below."
       );
 
-      /*
-      Refresh wallet just in case the backend created it.
-      */
-
-      await fetchWallet(currency);
+      await fetchWallet();
     } catch (err) {
       console.error("Create deposit error:", err);
 
-      const message =
+      setError(
         err?.response?.data?.message ||
-        err?.response?.data?.error ||
-        "Unable to create your deposit. Please try again.";
-
-      setError(message);
+          err?.response?.data?.error ||
+          err.message ||
+          "Unable to create your deposit. Please try again."
+      );
     } finally {
       setCreatingDeposit(false);
     }
@@ -551,14 +504,14 @@ const Deposit = () => {
     setError("");
     setSuccess("");
 
-    if (!deposit?.depositId) {
+    const depositId = deposit?.depositId || deposit?._id;
+
+    if (!depositId) {
       setError("Deposit information is missing.");
       return;
     }
 
-    if (
-      !transactionReference.trim()
-    ) {
+    if (!transactionReference.trim()) {
       setError(
         "Please enter the transaction reference from your payment."
       );
@@ -569,50 +522,43 @@ const Deposit = () => {
       setSubmittingPayment(true);
 
       const response = await api.patch(
-        `/deposits/${deposit.depositId}/submit`,
+        `/deposits/${depositId}/submit`,
         {
-          transactionReference:
-            transactionReference.trim(),
-
+          transactionReference: transactionReference.trim(),
           userNote: userNote.trim() || undefined,
         }
       );
 
-      const updatedDeposit =
-        response?.data?.data || null;
+      const responseData = response?.data?.data;
+      const updatedDeposit = responseData?.deposit || responseData;
 
       if (updatedDeposit) {
         setDeposit((previous) => ({
           ...previous,
           ...updatedDeposit,
+          depositId:
+            updatedDeposit.depositId ||
+            updatedDeposit._id ||
+            previous?.depositId,
+          currency: DEPOSIT_CURRENCY,
         }));
       }
 
       setSuccess(
-        "Payment submitted successfully. Your deposit is now awaiting admin review."
+        "Payment submitted successfully. Your USD deposit is awaiting admin review."
       );
-
-      /*
-      Give the user time to see the confirmation.
-      */
 
       setTimeout(() => {
-        navigate(
-          `/user/deposits/${deposit.depositId}`
-        );
+        navigate(`/user/deposits/${depositId}`);
       }, 1200);
     } catch (err) {
-      console.error(
-        "Submit payment error:",
-        err
-      );
+      console.error("Submit payment error:", err);
 
-      const message =
+      setError(
         err?.response?.data?.message ||
-        err?.response?.data?.error ||
-        "Unable to submit your payment. Please try again.";
-
-      setError(message);
+          err?.response?.data?.error ||
+          "Unable to submit your payment. Please try again."
+      );
     } finally {
       setSubmittingPayment(false);
     }
@@ -625,28 +571,25 @@ const Deposit = () => {
   */
 
   const copyToClipboard = async (value, field) => {
-    if (!value) {
-      return;
-    }
+    if (!value) return;
 
     try {
-      await navigator.clipboard.writeText(
-        String(value)
-      );
+      await navigator.clipboard.writeText(String(value));
 
       setCopiedField(field);
 
       setTimeout(() => {
         setCopiedField("");
       }, 1500);
-    } catch (error) {
-      console.error("Copy failed:", error);
+    } catch (err) {
+      console.error("Copy failed:", err);
+      setError("Unable to copy this value. Please copy it manually.");
     }
   };
 
   /*
   =====================================================
-  PAYMENT METHOD DETAILS
+  PAYMENT INSTRUCTIONS
   =====================================================
   */
 
@@ -659,17 +602,13 @@ const Deposit = () => {
   =====================================================
   */
 
-  if (
-    loadingWallet ||
-    loadingPaymentMethods
-  ) {
+  if (loadingWallet || loadingPaymentMethods) {
     return (
       <div className="min-h-screen bg-surface-950 text-white flex items-center justify-center px-4">
         <div className="text-center">
           <FaSpinner className="animate-spin text-3xl text-brand-500 mx-auto mb-4" />
-
           <p className="text-surface-300">
-            Loading deposit options...
+            Loading your USD wallet and payment options...
           </p>
         </div>
       </div>
@@ -685,216 +624,151 @@ const Deposit = () => {
   return (
     <div className="min-h-screen bg-surface-950 text-white px-4 py-6 md:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">
+        {/* HEADER */}
 
-        {/* =================================================
-            HEADER
-        ================================================= */}
-
-        <div className="mb-8">
-
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-
-            <div>
-
-              <div className="flex items-center gap-3 mb-2">
-
-                <div className="w-11 h-11 rounded-xl bg-brand-500/10 border border-brand-500/20 flex items-center justify-center">
-                  <FaArrowDown className="text-brand-400" />
-                </div>
-
-                <h1 className="text-2xl md:text-3xl font-bold">
-                  Deposit Funds
-                </h1>
-
+        <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-11 h-11 rounded-xl bg-brand-500/10 border border-brand-500/20 flex items-center justify-center">
+                <FaArrowDown className="text-brand-400" />
               </div>
 
-              <p className="text-surface-400">
-                Add funds securely to your trading wallet.
-              </p>
-
+              <h1 className="text-2xl md:text-3xl font-bold">
+                Deposit Funds
+              </h1>
             </div>
 
-            <div className="flex items-center gap-2">
-
-              <Link
-                to="/user/transactions"
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-surface-700 bg-surface-900 hover:bg-surface-800 transition text-sm"
-              >
-                <FaHistory />
-                Transactions
-              </Link>
-
-              <Link
-                to="/user/dashboard"
-                className="hidden sm:inline-flex items-center px-4 py-2.5 rounded-lg bg-brand-500 hover:bg-brand-600 transition text-sm font-medium"
-              >
-                Dashboard
-              </Link>
-
-            </div>
-
+            <p className="text-surface-400">
+              Add funds securely to your USD trading wallet.
+            </p>
           </div>
 
+          <div className="flex items-center gap-2">
+            <Link
+              to="/user/transactions"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-surface-700 bg-surface-900 hover:bg-surface-800 transition text-sm"
+            >
+              <FaHistory />
+              Transactions
+            </Link>
+
+            <Link
+              to="/user/dashboard"
+              className="hidden sm:inline-flex items-center px-4 py-2.5 rounded-lg bg-brand-500 hover:bg-brand-600 transition text-sm font-medium"
+            >
+              Dashboard
+            </Link>
+          </div>
         </div>
 
-        {/* =================================================
-            STEP INDICATOR
-        ================================================= */}
+        {/* STEP INDICATOR */}
 
         <div className="mb-8">
-
           <div className="flex items-center max-w-2xl">
-
             <div className="flex items-center gap-3">
-
-              <div
-                className={`w-9 h-9 rounded-full flex items-center justify-center font-bold ${step >= 1
-                    ? "bg-brand-500 text-white"
-                    : "bg-surface-800 text-surface-500"
-                  }`}
-              >
+              <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold bg-brand-500 text-white">
                 {step > 1 ? <FaCheck /> : "1"}
               </div>
 
               <div>
-                <p className="text-sm font-medium">
-                  Create Deposit
-                </p>
-
+                <p className="text-sm font-medium">Create Deposit</p>
                 <p className="text-xs text-surface-500">
-                  Amount & payment method
+                  Amount and payment method
                 </p>
               </div>
-
             </div>
 
             <div className="flex-1 h-px bg-surface-800 mx-4" />
 
             <div className="flex items-center gap-3">
-
               <div
-                className={`w-9 h-9 rounded-full flex items-center justify-center font-bold ${step >= 2
+                className={`w-9 h-9 rounded-full flex items-center justify-center font-bold ${
+                  step >= 2
                     ? "bg-brand-500 text-white"
                     : "bg-surface-800 text-surface-500"
-                  }`}
+                }`}
               >
                 2
               </div>
 
               <div>
-                <p className="text-sm font-medium">
-                  Make Payment
-                </p>
-
+                <p className="text-sm font-medium">Make Payment</p>
                 <p className="text-xs text-surface-500">
                   Submit transaction details
                 </p>
               </div>
-
             </div>
-
           </div>
-
         </div>
 
-        {/* =================================================
-            ALERTS
-        ================================================= */}
+        {/* ALERTS */}
 
         {error && (
           <div className="mb-6 rounded-xl border border-danger-500/30 bg-danger-500/10 px-4 py-4 flex items-start gap-3">
-
             <FaExclamationCircle className="text-danger-400 mt-1 shrink-0" />
-
             <div>
               <p className="font-medium text-danger-300">
                 Deposit Error
               </p>
-
-              <p className="text-sm text-surface-300 mt-1">
-                {error}
-              </p>
+              <p className="text-sm text-surface-300 mt-1">{error}</p>
             </div>
-
           </div>
         )}
 
         {success && (
           <div className="mb-6 rounded-xl border border-success-500/30 bg-success-500/10 px-4 py-4 flex items-start gap-3">
-
             <FaCheckCircle className="text-success-400 mt-1 shrink-0" />
-
             <div>
               <p className="font-medium text-success-300">
-                Deposit
+                Deposit Update
               </p>
-
               <p className="text-sm text-surface-300 mt-1">
                 {success}
               </p>
             </div>
-
           </div>
         )}
 
-        {/* =================================================
-            STEP 1
-        ================================================= */}
+        {/* =====================================================
+            STEP 1: CREATE DEPOSIT
+        ===================================================== */}
 
         {step === 1 && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-            {/* =================================================
-                FORM
-            ================================================= */}
-
             <div className="lg:col-span-2">
-
               <div className="bg-surface-900 border border-surface-800 rounded-2xl overflow-hidden">
-
                 <div className="px-6 py-5 border-b border-surface-800">
-
                   <h2 className="text-lg font-semibold">
-                    Create Deposit
+                    Create USD Deposit
                   </h2>
-
                   <p className="text-sm text-surface-400 mt-1">
-                    Enter your deposit amount and select its currency. View an estimated equivalent before continuing.
+                    Enter your deposit amount and choose a USD payment
+                    method.
                   </p>
-
                 </div>
 
                 <form
                   onSubmit={handleCreateDeposit}
                   className="p-6 space-y-6"
                 >
-
-                  {/* =================================================
-                      WALLET
-                  ================================================= */}
+                  {/* WALLET */}
 
                   <div className="rounded-xl border border-surface-700 bg-surface-950 p-5">
-
                     <div className="flex items-start justify-between gap-4">
-
                       <div className="flex items-center gap-3">
-
                         <div className="w-11 h-11 rounded-xl bg-brand-500/10 flex items-center justify-center">
                           <FaWallet className="text-brand-400" />
                         </div>
 
                         <div>
-
                           <p className="text-sm text-surface-400">
                             Destination Wallet
                           </p>
-
-                          <p className="font-semibold">
-                            {currency} Wallet
+                          <p className="font-semibold">USD Wallet</p>
+                          <p className="text-xs text-surface-500 mt-1">
+                            Your single account wallet
                           </p>
-
                         </div>
-
                       </div>
 
                       <button
@@ -906,262 +780,247 @@ const Deposit = () => {
                       >
                         <FaSyncAlt
                           className={
-                            refreshingWallet
-                              ? "animate-spin"
-                              : ""
+                            refreshingWallet ? "animate-spin" : ""
                           }
                         />
                       </button>
-
                     </div>
 
                     <div className="mt-5 pt-5 border-t border-surface-800">
-
                       <p className="text-sm text-surface-500">
                         Available Balance
                       </p>
 
                       <p className="text-2xl font-bold mt-1">
-                        {formatMoney(
-                          wallet?.availableBalance || 0,
-                          currency
-                        )}
+                        {formatMoney(wallet?.availableBalance || 0)}
                       </p>
 
                       <div className="mt-3 flex items-center gap-2 text-xs">
-
                         <span
-                          className={`w-2 h-2 rounded-full ${wallet?.status === "active"
+                          className={`w-2 h-2 rounded-full ${
+                            wallet?.status === "active"
                               ? "bg-success-500"
                               : "bg-danger-500"
-                            }`}
+                          }`}
                         />
 
                         <span className="text-surface-400">
-                          Wallet{" "}
-                          {wallet?.status || "unavailable"}
+                          Wallet {wallet?.status || "unavailable"}
                         </span>
-
                       </div>
 
-                    </div>
-
-                  </div>
-
-                  {/* =================================================
-                      AMOUNT + INTEGRATED DEPOSIT CURRENCY + CONVERTER
-                  ================================================= */}
-
-                  <div className="space-y-4">
-                    <div>
-                      <label
-                        htmlFor="depositAmount"
-                        className="block text-sm font-medium text-surface-300 mb-2"
-                      >
-                        Deposit Amount
-                      </label>
-
-                      <div className="flex flex-col sm:flex-row gap-3">
-                        <div className="relative flex-1">
-                          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-surface-400 font-medium">
-                            {currencySymbols[currency]}
+                      {wallet?.lockedBalance !== undefined && (
+                        <div className="mt-3 flex justify-between text-sm">
+                          <span className="text-surface-500">
+                            Locked Balance
                           </span>
-
-                          <input
-                            id="depositAmount"
-                            type="text"
-                            inputMode="decimal"
-                            value={amount}
-                            onChange={handleAmountChange}
-                            placeholder="0.00"
-                            disabled={creatingDeposit}
-                            className="w-full pl-10 pr-4 py-4 rounded-xl bg-surface-950 border border-surface-700 text-white text-lg outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition disabled:opacity-60"
-                          />
+                          <span className="text-surface-300">
+                            {formatMoney(wallet.lockedBalance)}
+                          </span>
                         </div>
-
-                        <div className="sm:w-44">
-                          <label htmlFor="depositCurrency" className="sr-only">
-                            Deposit currency
-                          </label>
-                          <select
-                            id="depositCurrency"
-                            value={currency}
-                            disabled={creatingDeposit}
-                            onChange={(event) => handleCurrencyChange(event.target.value)}
-                            className="w-full h-full min-h-[56px] px-4 py-3 rounded-xl bg-surface-950 border border-surface-700 text-white outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition disabled:opacity-60"
-                          >
-                            {CURRENCIES.map((item) => (
-                              <option key={item} value={item}>
-                                {item} — {currencyNames[item]}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-wrap justify-between gap-2 mt-2">
-                        <p className="text-xs text-surface-500">
-                          This is the currency and amount that will be submitted for your deposit.
-                        </p>
-                        {amount && (
-                          <p className="text-xs text-brand-400 font-medium">
-                            {formattedAmount}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="rounded-xl border border-surface-700 bg-surface-950 p-5">
-                      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
-                        <div>
-                          <p className="text-sm font-semibold">Currency Converter</p>
-                          <p className="text-xs text-surface-500 mt-1">
-                            Live indicative rate · does not change your deposit.
-                          </p>
-                        </div>
-                        <div className="sm:w-48">
-                          <label htmlFor="conversionCurrency" className="block text-xs text-surface-400 mb-2">
-                            Show equivalent in
-                          </label>
-                          <select
-                            id="conversionCurrency"
-                            value={conversionCurrency}
-                            onChange={(event) => setConversionCurrency(event.target.value)}
-                            className="w-full px-3 py-2.5 rounded-lg bg-surface-900 border border-surface-700 text-white outline-none focus:border-brand-500 transition"
-                          >
-                            {CURRENCIES.map((item) => (
-                              <option key={item} value={item}>{item} — {currencyNames[item]}</option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
-
-                      <div className="mt-4 rounded-lg bg-surface-900 border border-surface-800 p-4">
-                        <p className="text-xs text-surface-500">Estimated equivalent</p>
-                        <p className="text-2xl font-bold text-brand-400 mt-1">
-                          {currency === conversionCurrency
-                            ? formatMoney(amount || 0, currency)
-                            : loadingExchangeRates
-                              ? "Loading rate…"
-                              : convertedAmount !== null
-                                ? formatMoney(convertedAmount, conversionCurrency)
-                                : "—"}
-                        </p>
-                        {currency === conversionCurrency ? (
-                          <p className="text-xs text-surface-500 mt-2">Choose a different currency to compare the amount.</p>
-                        ) : Number.isFinite(conversionRate) && conversionRate > 0 ? (
-                          <p className="text-xs text-surface-500 mt-2">
-                            1 {currency} = {conversionRate.toLocaleString("en-US", { maximumFractionDigits: 6 })} {conversionCurrency}
-                          </p>
-                        ) : null}
-                        {loadingExchangeRates && (
-                          <p className="text-xs text-surface-500 mt-2 flex items-center gap-2">
-                            <FaSpinner className="animate-spin" /> Fetching live exchange rate…
-                          </p>
-                        )}
-                        {exchangeRateError && (
-                          <p className="text-xs text-warning-400 mt-2">{exchangeRateError}</p>
-                        )}
-                        {!exchangeRateError && exchangeRateDate && (
-                          <p className="text-xs text-surface-600 mt-2">Rate source updated: {exchangeRateDate}</p>
-                        )}
-                      </div>
-                      <p className="text-xs text-surface-500 leading-relaxed mt-3">
-                        This estimate is for reference only. Your deposit request uses exactly {amount ? formattedAmount : `the amount you enter`} in {currency}. No currency conversion or wallet credit happens from this display; the wallet is credited only after admin approval of the submitted payment.
-                      </p>
+                      )}
                     </div>
                   </div>
 
-                  {/* =================================================
-                      PAYMENT METHODS
-                  ================================================= */}
+                  {/* AMOUNT */}
 
                   <div>
+                    <label
+                      htmlFor="depositAmount"
+                      className="block text-sm font-medium text-surface-300 mb-2"
+                    >
+                      Deposit Amount (USD)
+                    </label>
 
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-surface-400 font-medium">
+                        $
+                      </span>
+
+                      <input
+                        id="depositAmount"
+                        type="text"
+                        inputMode="decimal"
+                        value={amount}
+                        onChange={handleAmountChange}
+                        placeholder="0.00"
+                        disabled={creatingDeposit}
+                        className="w-full pl-10 pr-4 py-4 rounded-xl bg-surface-950 border border-surface-700 text-white text-lg outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition disabled:opacity-60"
+                      />
+                    </div>
+
+                    <div className="flex flex-wrap justify-between gap-2 mt-2">
+                      <p className="text-xs text-surface-500">
+                        Your deposit will always be submitted in USD.
+                      </p>
+
+                      {amount && (
+                        <p className="text-xs text-brand-400 font-medium">
+                          {formattedAmount}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* DISPLAY-ONLY CONVERTER */}
+
+                  <div className="rounded-xl border border-surface-700 bg-surface-950 p-5">
+                    <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold">
+                          Currency Converter
+                        </p>
+                        <p className="text-xs text-surface-500 mt-1">
+                          Indicative exchange rate only. Your deposit
+                          remains in USD.
+                        </p>
+                      </div>
+
+                      <div className="sm:w-48">
+                        <label
+                          htmlFor="conversionCurrency"
+                          className="block text-xs text-surface-400 mb-2"
+                        >
+                          Show equivalent in
+                        </label>
+
+                        <select
+                          id="conversionCurrency"
+                          value={conversionCurrency}
+                          onChange={(event) =>
+                            setConversionCurrency(event.target.value)
+                          }
+                          className="w-full px-3 py-2.5 rounded-lg bg-surface-900 border border-surface-700 text-white outline-none focus:border-brand-500 transition"
+                        >
+                          {CONVERSION_CURRENCIES.map((item) => (
+                            <option key={item} value={item}>
+                              {item} — {currencyNames[item]}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 rounded-lg bg-surface-900 border border-surface-800 p-4">
+                      <p className="text-xs text-surface-500">
+                        Estimated equivalent
+                      </p>
+
+                      <p className="text-2xl font-bold text-brand-400 mt-1">
+                        {conversionCurrency === "USD"
+                          ? formatMoney(amount || 0, "USD")
+                          : loadingExchangeRates
+                            ? "Loading rate..."
+                            : convertedAmount !== null
+                              ? formatMoney(
+                                  convertedAmount,
+                                  conversionCurrency
+                                )
+                              : "—"}
+                      </p>
+
+                      {conversionCurrency !== "USD" &&
+                        Number.isFinite(conversionRate) &&
+                        conversionRate > 0 && (
+                          <p className="text-xs text-surface-500 mt-2">
+                            1 USD ={" "}
+                            {conversionRate.toLocaleString("en-US", {
+                              maximumFractionDigits: 6,
+                            })}{" "}
+                            {conversionCurrency}
+                          </p>
+                        )}
+
+                      {loadingExchangeRates && (
+                        <p className="text-xs text-surface-500 mt-2 flex items-center gap-2">
+                          <FaSpinner className="animate-spin" />
+                          Fetching exchange rates...
+                        </p>
+                      )}
+
+                      {exchangeRateError && (
+                        <p className="text-xs text-warning-400 mt-2">
+                          {exchangeRateError}
+                        </p>
+                      )}
+
+                      {!exchangeRateError && exchangeRateDate && (
+                        <p className="text-xs text-surface-600 mt-2">
+                          Rate source updated: {exchangeRateDate}
+                        </p>
+                      )}
+                    </div>
+
+                    <p className="text-xs text-surface-500 leading-relaxed mt-3">
+                      This conversion is only an estimate. It does not
+                      convert your deposit or change your wallet
+                      currency. Your wallet is credited only after
+                      admin approval.
+                    </p>
+                  </div>
+
+                  {/* PAYMENT METHODS */}
+
+                  <div>
                     <div className="flex items-center justify-between mb-2">
-
                       <label className="block text-sm font-medium text-surface-300">
-                        Payment Method
+                        USD Payment Method
                       </label>
 
                       <span className="text-xs text-surface-500">
                         {paymentMethods.length} available
                       </span>
-
                     </div>
 
                     {paymentMethods.length === 0 ? (
-
                       <div className="rounded-xl border border-warning-500/30 bg-warning-500/10 p-5">
-
                         <div className="flex items-start gap-3">
-
                           <FaInfoCircle className="text-warning-400 mt-1" />
 
                           <div>
-
                             <p className="font-medium text-warning-300">
-                              No payment method available
+                              No USD payment method available
                             </p>
-
                             <p className="text-sm text-surface-400 mt-1">
-                              There are currently no active payment
-                              methods for {currency}.
-                              Please try another currency or contact
-                              support.
+                              There are currently no active USD payment
+                              methods. Please contact support.
                             </p>
-
                           </div>
-
                         </div>
-
                       </div>
-
                     ) : (
-
                       <div className="space-y-3">
-
                         {paymentMethods.map((method) => {
-
-                          const Icon =
-                            getPaymentMethodIcon(
-                              method.type
-                            );
-
+                          const Icon = getPaymentMethodIcon(method.type);
                           const isSelected =
-                            selectedPaymentMethod?._id ===
-                            method._id;
+                            selectedPaymentMethod?._id === method._id;
 
                           return (
                             <button
                               key={method._id}
                               type="button"
                               onClick={() =>
-                                setSelectedPaymentMethod(
-                                  method
-                                )
+                                setSelectedPaymentMethod(method)
                               }
-                              className={`w-full text-left rounded-xl border p-4 transition ${isSelected
+                              className={`w-full text-left rounded-xl border p-4 transition ${
+                                isSelected
                                   ? "border-brand-500 bg-brand-500/10"
                                   : "border-surface-700 bg-surface-950 hover:border-surface-600"
-                                }`}
+                              }`}
                             >
-
                               <div className="flex items-center gap-4">
-
                                 <div
-                                  className={`w-11 h-11 rounded-xl flex items-center justify-center ${isSelected
+                                  className={`w-11 h-11 rounded-xl flex items-center justify-center ${
+                                    isSelected
                                       ? "bg-brand-500/20 text-brand-400"
                                       : "bg-surface-800 text-surface-400"
-                                    }`}
+                                  }`}
                                 >
                                   <Icon />
                                 </div>
 
                                 <div className="flex-1">
-
                                   <div className="flex items-center gap-2">
-
                                     <p className="font-semibold">
                                       {method.name}
                                     </p>
@@ -1169,76 +1028,53 @@ const Deposit = () => {
                                     {isSelected && (
                                       <FaCheckCircle className="text-success-400 text-sm" />
                                     )}
-
                                   </div>
 
                                   <p className="text-xs text-surface-500 mt-1">
-                                    {getPaymentMethodLabel(
-                                      method.type
-                                    )}
-                                    {" • "}
-                                    {method.currency}
+                                    {getPaymentMethodLabel(method.type)}
+                                    {" • USD"}
                                   </p>
-
                                 </div>
 
                                 <div
-                                  className={`w-5 h-5 rounded-full border flex items-center justify-center ${isSelected
+                                  className={`w-5 h-5 rounded-full border flex items-center justify-center ${
+                                    isSelected
                                       ? "border-brand-500"
                                       : "border-surface-600"
-                                    }`}
+                                  }`}
                                 >
                                   {isSelected && (
                                     <span className="w-2.5 h-2.5 rounded-full bg-brand-500" />
                                   )}
                                 </div>
-
                               </div>
-
                             </button>
                           );
                         })}
-
                       </div>
-
                     )}
-
                   </div>
 
-                  {/* =================================================
-                      SECURITY
-                  ================================================= */}
+                  {/* SECURITY NOTE */}
 
                   <div className="rounded-xl bg-surface-950 border border-surface-800 p-4">
-
                     <div className="flex items-start gap-3">
-
                       <FaShieldAlt className="text-success-400 mt-1 shrink-0" />
-
                       <div>
-
                         <p className="font-medium text-sm">
                           Secure Deposit Process
                         </p>
-
                         <p className="text-xs text-surface-500 mt-1 leading-relaxed">
-                          Your deposit will not immediately credit
-                          your wallet. After making payment, submit
-                          your transaction details for verification.
-                          Your wallet is credited only after admin
-                          approval.
-
+                          Your deposit will not immediately credit your
+                          wallet. After payment, submit your transaction
+                          details for verification. Your wallet is
+                          credited only after admin approval.
                         </p>
-
                       </div>
-
                     </div>
-
                   </div>
 
-                  {/* =================================================
-                      SUBMIT
-                  ================================================= */}
+                  {/* SUBMIT */}
 
                   <button
                     type="submit"
@@ -1246,11 +1082,11 @@ const Deposit = () => {
                       creatingDeposit ||
                       !amount ||
                       Number(amount) <= 0 ||
-                      !selectedPaymentMethod
+                      !selectedPaymentMethod ||
+                      wallet?.status !== "active"
                     }
                     className="w-full py-4 rounded-xl bg-brand-500 hover:bg-brand-600 disabled:bg-surface-700 disabled:text-surface-500 transition font-semibold flex items-center justify-center gap-3"
                   >
-
                     {creatingDeposit ? (
                       <>
                         <FaSpinner className="animate-spin" />
@@ -1262,231 +1098,133 @@ const Deposit = () => {
                         Continue to Payment
                       </>
                     )}
-
                   </button>
-
                 </form>
-
               </div>
-
             </div>
 
-            {/* =================================================
-                SIDEBAR
-            ================================================= */}
+            {/* SIDEBAR */}
 
             <div className="space-y-6">
-
-              {/* SUMMARY */}
-
               <div className="bg-surface-900 border border-surface-800 rounded-2xl p-6">
-
-                <h3 className="font-semibold mb-5">
-                  Deposit Summary
-                </h3>
+                <h3 className="font-semibold mb-5">Deposit Summary</h3>
 
                 <div className="space-y-4">
-
                   <div className="flex justify-between gap-4">
-
                     <span className="text-sm text-surface-400">
                       Currency
                     </span>
-
-                    <span className="font-medium">
-                      {currency}
-                    </span>
-
+                    <span className="font-medium">USD</span>
                   </div>
 
                   <div className="flex justify-between gap-4">
-
                     <span className="text-sm text-surface-400">
                       Amount
                     </span>
-
                     <span className="font-medium">
                       {formattedAmount}
                     </span>
-
                   </div>
 
                   <div className="flex justify-between gap-4">
-
                     <span className="text-sm text-surface-400">
                       Payment
                     </span>
-
                     <span className="font-medium text-right">
-                      {selectedPaymentMethod?.name ||
-                        "Not selected"}
+                      {selectedPaymentMethod?.name || "Not selected"}
                     </span>
-
                   </div>
 
                   <div className="border-t border-surface-800 pt-4 flex justify-between gap-4">
-
-                    <span className="font-medium">
-                      Total
-                    </span>
-
+                    <span className="font-medium">Total</span>
                     <span className="text-xl font-bold text-brand-400">
                       {formattedAmount}
                     </span>
-
                   </div>
-
                 </div>
-
               </div>
-
-              {/* HOW IT WORKS */}
 
               <div className="bg-surface-900 border border-surface-800 rounded-2xl p-6">
-
-                <h3 className="font-semibold mb-5">
-                  How It Works
-                </h3>
+                <h3 className="font-semibold mb-5">How It Works</h3>
 
                 <div className="space-y-5">
-
                   {[
-                    [
-                      "1",
-                      "Create deposit",
-                      "Enter your amount and select a payment method.",
-                    ],
-                    [
-                      "2",
-                      "Make payment",
-                      "Follow the payment instructions provided.",
-                    ],
-                    [
-                      "3",
-                      "Submit payment",
-                      "Enter your transaction reference after payment.",
-                    ],
-                    [
-                      "4",
-                      "Admin verification",
-                      "Our team reviews and verifies the payment.",
-                    ],
-                    [
-                      "5",
-                      "Wallet credited",
-                      "Approved deposits are added to your wallet.",
-                    ],
-                  ].map(
-                    ([number, title, description]) => (
-                      <div
-                        key={number}
-                        className="flex gap-3"
-                      >
-
-                        <div className="w-7 h-7 rounded-full bg-brand-500/10 text-brand-400 flex items-center justify-center text-xs font-bold shrink-0">
-                          {number}
-                        </div>
-
-                        <div>
-
-                          <p className="text-sm font-medium">
-                            {title}
-                          </p>
-
-                          <p className="text-xs text-surface-500 mt-1">
-                            {description}
-                          </p>
-
-                        </div>
-
+                    ["1", "Create deposit", "Enter your USD amount and choose a payment method."],
+                    ["2", "Make payment", "Follow the payment instructions provided."],
+                    ["3", "Submit payment", "Enter your transaction reference after payment."],
+                    ["4", "Admin verification", "Our team reviews and verifies the payment."],
+                    ["5", "Wallet credited", "Approved deposits are added to your USD wallet."],
+                  ].map(([number, title, description]) => (
+                    <div key={number} className="flex gap-3">
+                      <div className="w-7 h-7 rounded-full bg-brand-500/10 text-brand-400 flex items-center justify-center text-xs font-bold shrink-0">
+                        {number}
                       </div>
-                    )
-                  )}
 
+                      <div>
+                        <p className="text-sm font-medium">{title}</p>
+                        <p className="text-xs text-surface-500 mt-1">
+                          {description}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-
               </div>
 
-              {/* SECURITY */}
-
               <div className="rounded-2xl border border-surface-800 bg-surface-900 p-6">
-
                 <div className="flex items-center gap-3 mb-4">
-
                   <div className="w-10 h-10 rounded-lg bg-success-500/10 flex items-center justify-center">
                     <FaLock className="text-success-400" />
                   </div>
-
                   <h3 className="font-semibold">
                     Your Security Matters
                   </h3>
-
                 </div>
 
                 <p className="text-sm text-surface-400 leading-relaxed">
-                  Never share your password, OTP, card PIN,
-                  or account credentials with anyone claiming
-                  to be support.
+                  Never share your password, OTP, card PIN, or account
+                  credentials with anyone claiming to be support.
                 </p>
-
               </div>
-
             </div>
-
           </div>
         )}
 
-        {/* =================================================
-            STEP 2 — PAYMENT INSTRUCTIONS
-        ================================================= */}
+        {/* =====================================================
+            STEP 2: PAYMENT INSTRUCTIONS
+        ===================================================== */}
 
         {step === 2 && deposit && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-            {/* =================================================
-                PAYMENT INSTRUCTIONS
-            ================================================= */}
-
             <div className="lg:col-span-2">
-
               <div className="bg-surface-900 border border-surface-800 rounded-2xl overflow-hidden">
-
                 <div className="px-6 py-5 border-b border-surface-800">
-
                   <div className="flex items-center gap-3">
-
                     <div className="w-11 h-11 rounded-xl bg-success-500/10 flex items-center justify-center">
                       <FaReceipt className="text-success-400" />
                     </div>
 
                     <div>
-
                       <h2 className="text-lg font-semibold">
                         Payment Instructions
                       </h2>
-
                       <p className="text-sm text-surface-400 mt-1">
-                        Complete your payment using the information below.
+                        Complete your USD payment using the information
+                        below.
                       </p>
-
                     </div>
-
                   </div>
-
                 </div>
 
                 <div className="p-6 space-y-6">
-
                   {/* DEPOSIT REFERENCE */}
 
                   <div className="rounded-xl border border-brand-500/30 bg-brand-500/5 p-5">
-
                     <p className="text-xs text-surface-500 uppercase tracking-wider">
                       Deposit Reference
                     </p>
 
                     <div className="flex items-center gap-3 mt-2">
-
                       <p className="text-xl font-bold text-brand-400 break-all">
                         {deposit.reference}
                       </p>
@@ -1494,10 +1232,7 @@ const Deposit = () => {
                       <button
                         type="button"
                         onClick={() =>
-                          copyToClipboard(
-                            deposit.reference,
-                            "reference"
-                          )
+                          copyToClipboard(deposit.reference, "reference")
                         }
                         className="p-2 rounded-lg bg-surface-800 hover:bg-surface-700 transition shrink-0"
                         title="Copy reference"
@@ -1508,270 +1243,175 @@ const Deposit = () => {
                           <FaCopy />
                         )}
                       </button>
-
                     </div>
 
                     <p className="text-xs text-surface-500 mt-2">
                       Keep this reference for your records.
                     </p>
-
                   </div>
 
-                  {/* AMOUNT */}
+                  {/* AMOUNT AND METHOD */}
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
                     <div className="rounded-xl border border-surface-700 bg-surface-950 p-5">
-
-                      <p className="text-xs text-surface-500">
-                        Amount
-                      </p>
-
+                      <p className="text-xs text-surface-500">Amount</p>
                       <p className="text-2xl font-bold mt-1">
-                        {formatMoney(
-                          deposit.amount,
-                          deposit.currency
-                        )}
+                        {formatMoney(deposit.amount)}
                       </p>
-
                     </div>
 
                     <div className="rounded-xl border border-surface-700 bg-surface-950 p-5">
-
                       <p className="text-xs text-surface-500">
                         Payment Method
                       </p>
-
                       <p className="font-semibold mt-1">
-                        {paymentInstructions?.name}
+                        {paymentInstructions?.name || "Payment method"}
                       </p>
-
                       <p className="text-xs text-surface-500 mt-1">
-                        {getPaymentMethodLabel(
-                          paymentInstructions?.type
-                        )}
+                        {getPaymentMethodLabel(paymentInstructions?.type)}
                       </p>
-
                     </div>
-
                   </div>
 
                   {/* BANK DETAILS */}
 
-                  {paymentInstructions?.type ===
-                    "bank_transfer" && (
-                      <div className="rounded-xl border border-surface-700 bg-surface-950 p-5">
+                  {paymentInstructions?.type === "bank_transfer" && (
+                    <div className="rounded-xl border border-surface-700 bg-surface-950 p-5">
+                      <h3 className="font-semibold mb-4">
+                        Bank Transfer Details
+                      </h3>
 
-                        <h3 className="font-semibold mb-4">
-                          Bank Transfer Details
-                        </h3>
+                      <div className="space-y-4">
+                        {[
+                          ["Bank Name", paymentInstructions.bankName, "bankName"],
+                          ["Account Name", paymentInstructions.accountName, "accountName"],
+                          ["Account Number", paymentInstructions.accountNumber, "accountNumber"],
+                          ["Routing Number", paymentInstructions.routingNumber, "routingNumber"],
+                          ["IBAN", paymentInstructions.iban, "iban"],
+                          ["SWIFT Code", paymentInstructions.swiftCode, "swiftCode"],
+                        ]
+                          .filter(([, value]) => value)
+                          .map(([label, value, field]) => (
+                            <div
+                              key={field}
+                              className="flex items-center justify-between gap-4 py-2 border-b border-surface-800 last:border-0"
+                            >
+                              <span className="text-sm text-surface-400">
+                                {label}
+                              </span>
 
-                        <div className="space-y-4">
-
-                          {[
-                            [
-                              "Bank Name",
-                              paymentInstructions.bankName,
-                              "bankName",
-                            ],
-                            [
-                              "Account Name",
-                              paymentInstructions.accountName,
-                              "accountName",
-                            ],
-                            [
-                              "Account Number",
-                              paymentInstructions.accountNumber,
-                              "accountNumber",
-                            ],
-                            [
-                              "Routing Number",
-                              paymentInstructions.routingNumber,
-                              "routingNumber",
-                            ],
-                            [
-                              "IBAN",
-                              paymentInstructions.iban,
-                              "iban",
-                            ],
-                            [
-                              "SWIFT Code",
-                              paymentInstructions.swiftCode,
-                              "swiftCode",
-                            ],
-                          ]
-                            .filter(
-                              ([, value]) =>
-                                value
-                            )
-                            .map(
-                              ([label, value, field]) => (
-                                <div
-                                  key={field}
-                                  className="flex items-center justify-between gap-4 py-2 border-b border-surface-800 last:border-0"
-                                >
-
-                                  <span className="text-sm text-surface-400">
-                                    {label}
-                                  </span>
-
-                                  <div className="flex items-center gap-2">
-
-                                    <span className="text-sm font-medium text-right break-all">
-                                      {value}
-                                    </span>
-
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        copyToClipboard(
-                                          value,
-                                          field
-                                        )
-                                      }
-                                      className="p-1.5 rounded-md hover:bg-surface-800 text-surface-400 hover:text-white"
-                                    >
-                                      {copiedField === field ? (
-                                        <FaCheck className="text-success-400 text-xs" />
-                                      ) : (
-                                        <FaCopy className="text-xs" />
-                                      )}
-                                    </button>
-
-                                  </div>
-
-                                </div>
-                              )
-                            )}
-
-                        </div>
-
-                      </div>
-                    )}
-
-                  {/* CRYPTO DETAILS */}
-
-                  {paymentInstructions?.type ===
-                    "crypto" && (
-                      <div className="rounded-xl border border-surface-700 bg-surface-950 p-5">
-
-                        <h3 className="font-semibold mb-4">
-                          Cryptocurrency Payment
-                        </h3>
-
-                        <div className="space-y-4">
-
-                          {paymentInstructions.network && (
-                            <div>
-
-                              <p className="text-xs text-surface-500">
-                                Network
-                              </p>
-
-                              <p className="font-semibold mt-1">
-                                {paymentInstructions.network}
-                              </p>
-
-                            </div>
-                          )}
-
-                          {paymentInstructions.walletAddress && (
-                            <div>
-
-                              <p className="text-xs text-surface-500">
-                                Wallet Address
-                              </p>
-
-                              <div className="flex gap-2 mt-1">
-
-                                <div className="flex-1 p-3 rounded-lg bg-surface-900 border border-surface-800 text-sm break-all">
-                                  {
-                                    paymentInstructions.walletAddress
-                                  }
-                                </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium text-right break-all">
+                                  {value}
+                                </span>
 
                                 <button
                                   type="button"
-                                  onClick={() =>
-                                    copyToClipboard(
-                                      paymentInstructions.walletAddress,
-                                      "walletAddress"
-                                    )
-                                  }
-                                  className="p-3 rounded-lg bg-surface-800 hover:bg-surface-700"
+                                  onClick={() => copyToClipboard(value, field)}
+                                  className="p-1.5 rounded-md hover:bg-surface-800 text-surface-400 hover:text-white"
+                                  title={`Copy ${label}`}
                                 >
-                                  {copiedField ===
-                                    "walletAddress" ? (
-                                    <FaCheck className="text-success-400" />
+                                  {copiedField === field ? (
+                                    <FaCheck className="text-success-400 text-xs" />
                                   ) : (
-                                    <FaCopy />
+                                    <FaCopy className="text-xs" />
                                   )}
                                 </button>
-
                               </div>
-
                             </div>
-                          )}
-
-                        </div>
-
+                          ))}
                       </div>
-                    )}
+                    </div>
+                  )}
 
-                  {/* OTHER INSTRUCTIONS */}
+                  {/* CRYPTO DETAILS */}
+
+                  {paymentInstructions?.type === "crypto" && (
+                    <div className="rounded-xl border border-surface-700 bg-surface-950 p-5">
+                      <h3 className="font-semibold mb-4">
+                        Cryptocurrency Payment
+                      </h3>
+
+                      {paymentInstructions.network && (
+                        <div className="mb-4">
+                          <p className="text-xs text-surface-500">Network</p>
+                          <p className="font-semibold mt-1">
+                            {paymentInstructions.network}
+                          </p>
+                        </div>
+                      )}
+
+                      {paymentInstructions.walletAddress && (
+                        <div>
+                          <p className="text-xs text-surface-500">
+                            Wallet Address
+                          </p>
+
+                          <div className="flex gap-2 mt-1">
+                            <div className="flex-1 p-3 rounded-lg bg-surface-900 border border-surface-800 text-sm break-all">
+                              {paymentInstructions.walletAddress}
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                copyToClipboard(
+                                  paymentInstructions.walletAddress,
+                                  "walletAddress"
+                                )
+                              }
+                              className="p-3 rounded-lg bg-surface-800 hover:bg-surface-700"
+                              title="Copy wallet address"
+                            >
+                              {copiedField === "walletAddress" ? (
+                                <FaCheck className="text-success-400" />
+                              ) : (
+                                <FaCopy />
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* GENERAL INSTRUCTIONS */}
 
                   {paymentInstructions?.instructions && (
                     <div className="rounded-xl border border-brand-500/20 bg-brand-500/5 p-5">
-
                       <div className="flex items-start gap-3">
-
                         <FaInfoCircle className="text-brand-400 mt-1 shrink-0" />
 
                         <div>
-
                           <h3 className="font-semibold">
                             Payment Instructions
                           </h3>
 
                           <p className="text-sm text-surface-400 mt-2 whitespace-pre-line leading-relaxed">
-                            {
-                              paymentInstructions.instructions
-                            }
+                            {paymentInstructions.instructions}
                           </p>
-
                         </div>
-
                       </div>
-
                     </div>
                   )}
 
-                  {/* =================================================
-                      SUBMIT PAYMENT
-                  ================================================= */}
+                  {/* SUBMIT PAYMENT */}
 
                   <form
                     onSubmit={handleSubmitPayment}
                     className="space-y-5"
                   >
-
                     <div className="border-t border-surface-800 pt-6">
-
                       <h3 className="font-semibold">
                         After You Make Payment
                       </h3>
-
                       <p className="text-sm text-surface-400 mt-1">
-                        Enter the transaction reference supplied
-                        by your bank or payment provider.
+                        Enter the transaction reference supplied by your
+                        bank or payment provider.
                       </p>
-
                     </div>
 
-                    {/* TRANSACTION REFERENCE */}
-
                     <div>
-
                       <label
                         htmlFor="transactionReference"
                         className="block text-sm font-medium text-surface-300 mb-2"
@@ -1784,28 +1424,21 @@ const Deposit = () => {
                         type="text"
                         value={transactionReference}
                         onChange={(event) =>
-                          setTransactionReference(
-                            event.target.value
-                          )
+                          setTransactionReference(event.target.value)
                         }
                         placeholder="Enter your transaction reference"
                         disabled={submittingPayment}
                         className="w-full px-4 py-3 rounded-xl bg-surface-950 border border-surface-700 text-white outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition"
                       />
-
                     </div>
 
-                    {/* NOTE */}
-
                     <div>
-
                       <label
                         htmlFor="userNote"
                         className="block text-sm font-medium text-surface-300 mb-2"
                       >
-                        Additional Note
+                        Additional Note{" "}
                         <span className="text-surface-600 font-normal">
-                          {" "}
                           (optional)
                         </span>
                       </label>
@@ -1813,36 +1446,24 @@ const Deposit = () => {
                       <textarea
                         id="userNote"
                         value={userNote}
-                        onChange={(event) =>
-                          setUserNote(
-                            event.target.value
-                          )
-                        }
-                        placeholder="Add any information that may help us verify your payment..."
+                        onChange={(event) => setUserNote(event.target.value)}
+                        placeholder="Add information that may help us verify your payment..."
                         rows={4}
                         disabled={submittingPayment}
                         className="w-full px-4 py-3 rounded-xl bg-surface-950 border border-surface-700 text-white outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition resize-none"
                       />
-
                     </div>
 
-                    {/* WARNING */}
-
                     <div className="rounded-xl border border-warning-500/30 bg-warning-500/10 p-4">
-
                       <div className="flex items-start gap-3">
-
                         <FaInfoCircle className="text-warning-400 mt-1 shrink-0" />
-
                         <p className="text-sm text-surface-300 leading-relaxed">
-                          Only submit this form after you have
-                          completed the payment. Your wallet will
-                          not be credited until the payment has
-                          been reviewed and approved.
+                          Only submit this form after completing your
+                          payment. Your USD wallet will not be credited
+                          until your payment has been reviewed and
+                          approved.
                         </p>
-
                       </div>
-
                     </div>
 
                     <button
@@ -1853,7 +1474,6 @@ const Deposit = () => {
                       }
                       className="w-full py-4 rounded-xl bg-brand-500 hover:bg-brand-600 disabled:bg-surface-700 disabled:text-surface-500 transition font-semibold flex items-center justify-center gap-3"
                     >
-
                       {submittingPayment ? (
                         <>
                           <FaSpinner className="animate-spin" />
@@ -1865,154 +1485,94 @@ const Deposit = () => {
                           I Have Made This Payment
                         </>
                       )}
-
                     </button>
-
                   </form>
-
                 </div>
-
               </div>
-
             </div>
 
-            {/* =================================================
-                RIGHT SIDEBAR
-            ================================================= */}
+            {/* RIGHT SIDEBAR */}
 
             <div className="space-y-6">
-
-              {/* STATUS */}
-
               <div className="bg-surface-900 border border-surface-800 rounded-2xl p-6">
-
-                <h3 className="font-semibold mb-5">
-                  Deposit Status
-                </h3>
+                <h3 className="font-semibold mb-5">Deposit Status</h3>
 
                 <div className="flex items-center gap-3">
-
                   <div className="w-11 h-11 rounded-full bg-warning-500/10 flex items-center justify-center">
                     <FaReceipt className="text-warning-400" />
                   </div>
 
                   <div>
-
                     <p className="font-semibold capitalize">
-                      {deposit.status || "pending"}
+                      {(deposit.status || "pending").replaceAll("_", " ")}
                     </p>
-
                     <p className="text-xs text-surface-500 mt-1">
                       Awaiting payment submission
                     </p>
-
                   </div>
-
                 </div>
-
               </div>
 
-              {/* SUMMARY */}
-
               <div className="bg-surface-900 border border-surface-800 rounded-2xl p-6">
-
-                <h3 className="font-semibold mb-5">
-                  Deposit Summary
-                </h3>
+                <h3 className="font-semibold mb-5">Deposit Summary</h3>
 
                 <div className="space-y-4">
-
                   <div className="flex justify-between gap-4">
-
                     <span className="text-sm text-surface-400">
                       Reference
                     </span>
-
                     <span className="text-sm font-medium break-all text-right">
                       {deposit.reference}
                     </span>
-
                   </div>
 
                   <div className="flex justify-between gap-4">
-
                     <span className="text-sm text-surface-400">
                       Currency
                     </span>
-
-                    <span className="font-medium">
-                      {deposit.currency}
-                    </span>
-
+                    <span className="font-medium">USD</span>
                   </div>
 
                   <div className="flex justify-between gap-4">
-
                     <span className="text-sm text-surface-400">
                       Amount
                     </span>
-
                     <span className="font-semibold">
-                      {formatMoney(
-                        deposit.amount,
-                        deposit.currency
-                      )}
+                      {formatMoney(deposit.amount)}
                     </span>
-
                   </div>
 
                   <div className="flex justify-between gap-4">
-
                     <span className="text-sm text-surface-400">
                       Method
                     </span>
-
                     <span className="font-medium text-right">
-                      {paymentInstructions?.name}
+                      {paymentInstructions?.name || "Payment method"}
                     </span>
-
                   </div>
-
                 </div>
-
               </div>
 
-              {/* SECURITY */}
-
               <div className="rounded-2xl border border-surface-800 bg-surface-900 p-6">
-
                 <div className="flex items-center gap-3 mb-4">
-
                   <div className="w-10 h-10 rounded-lg bg-success-500/10 flex items-center justify-center">
                     <FaLock className="text-success-400" />
                   </div>
-
-                  <h3 className="font-semibold">
-                    Important
-                  </h3>
-
+                  <h3 className="font-semibold">Important</h3>
                 </div>
 
                 <p className="text-sm text-surface-400 leading-relaxed">
-                  Never send money to a payment account that
-                  is different from the payment details shown
-                  on this page.
+                  Never send money to a payment account that differs from
+                  the payment details displayed on this page.
                 </p>
-
               </div>
 
-              {/* LINKS */}
-
               <div className="grid grid-cols-2 gap-3">
-
                 <Link
                   to="/user/withdraw"
                   className="rounded-xl border border-surface-700 bg-surface-900 hover:bg-surface-800 p-4 text-center transition"
                 >
-                  <p className="text-sm font-medium">
-                    Withdraw
-                  </p>
-
+                  <p className="text-sm font-medium">Withdraw</p>
                   <p className="text-xs text-surface-500 mt-1">
                     Manage funds
                   </p>
@@ -2022,35 +1582,22 @@ const Deposit = () => {
                   to="/user/transactions"
                   className="rounded-xl border border-surface-700 bg-surface-900 hover:bg-surface-800 p-4 text-center transition"
                 >
-                  <p className="text-sm font-medium">
-                    History
-                  </p>
-
+                  <p className="text-sm font-medium">History</p>
                   <p className="text-xs text-surface-500 mt-1">
                     View transactions
                   </p>
                 </Link>
-
               </div>
-
             </div>
-
           </div>
         )}
 
-        {/* =================================================
-            FOOTER
-        ================================================= */}
+        {/* FOOTER */}
 
         <div className="mt-8 flex items-center justify-center gap-2 text-xs text-surface-500">
-
           <FaLock />
-
-          Deposits are securely reviewed before your wallet
-          is credited.
-
+          Deposits are securely reviewed before your USD wallet is credited.
         </div>
-
       </div>
     </div>
   );
