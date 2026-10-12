@@ -292,10 +292,6 @@ const Withdraw = () => {
             <h1 className="text-2xl font-bold text-surface-100 sm:text-3xl">
               Withdraw Funds
             </h1>
-            <p className="mt-2 max-w-2xl text-sm text-surface-400 sm:text-base">
-              Request a withdrawal from your available wallet balance. Withdrawals
-              may be reviewed before processing.
-            </p>
           </div>
           <Link
             to="/user/transactions"
@@ -336,51 +332,18 @@ const Withdraw = () => {
 
       <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
         <div className="space-y-6">
-          <div className="overflow-hidden rounded-2xl border border-surface-700 bg-surface-900">
-            <div className="border-b border-surface-700 p-5 sm:p-6">
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-500/10">
-                  <FaWallet className="text-brand-400" />
-                </div>
-                <div>
-                  <h2 className="font-semibold text-surface-100">Wallet Balance</h2>
-                  <p className="text-sm text-surface-400">
-                    Current balance in your active wallet currency
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="grid gap-4 p-5 sm:grid-cols-3 sm:p-6">
-              <BalanceItem label="Available" value={formatMoney(availableBalance, walletCurrency)} valueClass="text-success-400" />
-              <BalanceItem label="Locked" value={formatMoney(lockedBalance, walletCurrency)} valueClass="text-warning-400" />
-              <BalanceItem label="Currency" value={walletCurrency} />
-            </div>
-          </div>
+          
 
           <form onSubmit={handleSubmit} className="rounded-2xl border border-surface-700 bg-surface-900">
             <div className="border-b border-surface-700 p-5 sm:p-6">
               <h2 className="text-lg font-semibold text-surface-100">Withdrawal Details</h2>
               <p className="mt-1 text-sm text-surface-400">
-                Select your payout currency, enter the amount, and provide your destination.
+                Enter the amount, and provide your destination.
               </p>
             </div>
 
             <div className="space-y-6 p-5 sm:p-6">
               <div>
-                <label htmlFor="currency" className="mb-2 block text-sm font-medium text-surface-200">
-                  Withdrawal Currency
-                </label>
-                <select
-                  id="currency"
-                  name="currency"
-                  value={form.currency}
-                  onChange={handleChange}
-                  className="w-full rounded-xl border border-surface-700 bg-surface-950 px-4 py-3.5 text-surface-100 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
-                >
-                  {CURRENCY_OPTIONS.map((currency) => (
-                    <option key={currency} value={currency}>{currency}</option>
-                  ))}
-                </select>
 
                 {currencyMismatch && (
                   <div className="mt-3 rounded-xl border border-warning-500/20 bg-warning-500/10 p-4">
