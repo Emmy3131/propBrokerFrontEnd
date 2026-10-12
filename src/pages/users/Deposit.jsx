@@ -109,7 +109,15 @@ const Deposit = () => {
   */
 
   const [amount, setAmount] = useState("");
+  // The selected currency is the actual deposit currency sent to the backend.
   const [currency, setCurrency] = useState("USD");
+
+  // Conversion is display-only; it never changes the deposit amount/currency.
+  const [conversionCurrency, setConversionCurrency] = useState("NGN");
+  const [exchangeRates, setExchangeRates] = useState({});
+  const [exchangeRateDate, setExchangeRateDate] = useState("");
+  const [loadingExchangeRates, setLoadingExchangeRates] = useState(false);
+  const [exchangeRateError, setExchangeRateError] = useState("");
 
   /*
   =====================================================
@@ -271,6 +279,60 @@ const Deposit = () => {
 
   /*
   =====================================================
+  LIVE EXCHANGE RATES (DISPLAY ONLY)
+  =====================================================
+  The API returns rates relative to the currently selected deposit currency.
+  These rates are estimates for display; the backend deposit payload continues
+  to use only `amount` and `currency` selected in the amount input.
+  =====================================================
+  */
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const fetchExchangeRates = async () => {
+      setLoadingExchangeRates(true);
+      setExchangeRateError("");
+
+      try {
+        const response = await fetch(
+          `https://open.er-api.com/v6/latest/${currency}`,
+          { signal: controller.signal }
+        );
+
+        if (!response.ok) {
+          throw new Error("The exchange-rate service is unavailable.");
+        }
+
+        const data = await response.json();
+
+        if (data?.result !== "success" || !data?.rates) {
+          throw new Error("A live exchange rate could not be retrieved.");
+        }
+
+        setExchangeRates(data.rates);
+        setExchangeRateDate(data.time_last_update_utc || "");
+      } catch (err) {
+        if (err.name === "AbortError") return;
+        console.error("Exchange-rate loading error:", err);
+        setExchangeRates({});
+        setExchangeRateDate("");
+        setExchangeRateError(
+          "Live exchange rates are temporarily unavailable. You can still create a deposit in the selected deposit currency."
+        );
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoadingExchangeRates(false);
+        }
+      }
+    };
+
+    fetchExchangeRates();
+    return () => controller.abort();
+  }, [currency]);
+
+  /*
+  =====================================================
   INITIAL LOAD
   =====================================================
   */
@@ -287,11 +349,18 @@ const Deposit = () => {
   */
 
   const handleCurrencyChange = async (newCurrency) => {
+    if (!CURRENCIES.includes(newCurrency)) return;
+
     setCurrency(newCurrency);
     setAmount("");
     setError("");
     setSuccess("");
 
+    if (conversionCurrency === newCurrency) {
+      setConversionCurrency(CURRENCIES.find((item) => item !== newCurrency) || "NGN");
+    }
+
+    setSelectedPaymentMethod(null);
     setRefreshingWallet(true);
 
     await Promise.all([
@@ -354,6 +423,20 @@ const Deposit = () => {
     return formatMoney(amount, currency);
   }, [amount, currency]);
 
+
+  const convertedAmount = useMemo(() => {
+    const numericAmount = Number(amount);
+    const rate = Number(exchangeRates?.[conversionCurrency]);
+
+    if (!amount || !Number.isFinite(numericAmount) || !Number.isFinite(rate)) {
+      return null;
+    }
+
+    return numericAmount * rate;
+  }, [amount, exchangeRates, conversionCurrency]);
+
+  const conversionRate = Number(exchangeRates?.[conversionCurrency]);
+
   /*
   =====================================================
   CREATE DEPOSIT
@@ -412,6 +495,8 @@ const Deposit = () => {
     try {
       setCreatingDeposit(true);
 
+      // Only submit the amount entered by the user and its selected deposit
+      // currency. The converted display amount is intentionally never sent.
       const response = await api.post("/deposits", {
         amount: String(amount),
         currency,
@@ -460,73 +545,78 @@ const Deposit = () => {
   =====================================================
   */
 
- const handleSubmitPayment = async (event) => {
+  const handleSubmitPayment = async (event) => {
     event.preventDefault();
 
     setError("");
     setSuccess("");
 
     if (!deposit?.depositId) {
-        setError("Deposit information is missing.");
-        return;
+      setError("Deposit information is missing.");
+      return;
     }
 
-    if (!transactionReference.trim()) {
-        setError(
-            "Please enter the transaction reference from your payment."
-        );
-        return;
+    if (
+      !transactionReference.trim()
+    ) {
+      setError(
+        "Please enter the transaction reference from your payment."
+      );
+      return;
     }
 
     try {
-        setSubmittingPayment(true);
+      setSubmittingPayment(true);
 
-        const response = await api.post(
-            `/deposits/${deposit.depositId}/submit`,
-            {
-                transactionReference:
-                    transactionReference.trim(),
+      const response = await api.patch(
+        `/deposits/${deposit.depositId}/submit`,
+        {
+          transactionReference:
+            transactionReference.trim(),
 
-                userNote:
-                    userNote.trim() || undefined,
-            }
-        );
-
-        const updatedDeposit =
-            response?.data?.data || null;
-
-        if (updatedDeposit) {
-            setDeposit((previous) => ({
-                ...previous,
-                ...updatedDeposit,
-            }));
+          userNote: userNote.trim() || undefined,
         }
+      );
 
-        setSuccess(
-            "Payment submitted successfully. Your deposit is now awaiting admin review."
+      const updatedDeposit =
+        response?.data?.data || null;
+
+      if (updatedDeposit) {
+        setDeposit((previous) => ({
+          ...previous,
+          ...updatedDeposit,
+        }));
+      }
+
+      setSuccess(
+        "Payment submitted successfully. Your deposit is now awaiting admin review."
+      );
+
+      /*
+      Give the user time to see the confirmation.
+      */
+
+      setTimeout(() => {
+        navigate(
+          `/user/deposits/${deposit.depositId}`
         );
-
-        setTimeout(() => {
-            navigate(
-                `/user/deposits/${deposit.depositId}`
-            );
-        }, 1200);
+      }, 1200);
     } catch (err) {
-        console.error(
-            "Submit payment error:",
-            err
-        );
+      console.error(
+        "Submit payment error:",
+        err
+      );
 
-        const message =
-            err?.response?.data?.message ||
-            err?.response?.data?.error ||
-            "Unable to submit your payment. Please try again.";
+      const message =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        "Unable to submit your payment. Please try again.";
 
-        setError(message);
+      setError(message);
     } finally {
-        setSubmittingPayment(false);
+      setSubmittingPayment(false);
     }
-};
+  };
 
   /*
   =====================================================
@@ -659,8 +749,8 @@ const Deposit = () => {
 
               <div
                 className={`w-9 h-9 rounded-full flex items-center justify-center font-bold ${step >= 1
-                  ? "bg-brand-500 text-white"
-                  : "bg-surface-800 text-surface-500"
+                    ? "bg-brand-500 text-white"
+                    : "bg-surface-800 text-surface-500"
                   }`}
               >
                 {step > 1 ? <FaCheck /> : "1"}
@@ -684,8 +774,8 @@ const Deposit = () => {
 
               <div
                 className={`w-9 h-9 rounded-full flex items-center justify-center font-bold ${step >= 2
-                  ? "bg-brand-500 text-white"
-                  : "bg-surface-800 text-surface-500"
+                    ? "bg-brand-500 text-white"
+                    : "bg-surface-800 text-surface-500"
                   }`}
               >
                 2
@@ -769,8 +859,7 @@ const Deposit = () => {
                   </h2>
 
                   <p className="text-sm text-surface-400 mt-1">
-                    Choose your currency, payment method,
-                    and deposit amount.
+                    Enter your deposit amount and select its currency. View an estimated equivalent before continuing.
                   </p>
 
                 </div>
@@ -779,67 +868,6 @@ const Deposit = () => {
                   onSubmit={handleCreateDeposit}
                   className="p-6 space-y-6"
                 >
-
-                  {/* =================================================
-                      CURRENCY
-                  ================================================= */}
-
-                  <div>
-
-                    <label className="block text-sm font-medium text-surface-300 mb-2">
-                      Deposit Currency
-                    </label>
-
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-
-                      {CURRENCIES.map((item) => (
-
-                        <button
-                          key={item}
-                          type="button"
-                          onClick={() =>
-                            handleCurrencyChange(item)
-                          }
-                          className={`p-4 rounded-xl border text-left transition ${currency === item
-                            ? "border-brand-500 bg-brand-500/10"
-                            : "border-surface-700 bg-surface-950 hover:border-surface-600"
-                            }`}
-                        >
-
-                          <div className="flex items-center justify-between">
-
-                            <div>
-
-                              <p className="font-semibold">
-                                {item}
-                              </p>
-
-                              <p className="text-xs text-surface-500 mt-1">
-                                {currencyNames[item]}
-                              </p>
-
-                            </div>
-
-                            <span
-                              className={`w-5 h-5 rounded-full border flex items-center justify-center ${currency === item
-                                ? "border-brand-500"
-                                : "border-surface-600"
-                                }`}
-                            >
-                              {currency === item && (
-                                <span className="w-2.5 h-2.5 rounded-full bg-brand-500" />
-                              )}
-                            </span>
-
-                          </div>
-
-                        </button>
-
-                      ))}
-
-                    </div>
-
-                  </div>
 
                   {/* =================================================
                       WALLET
@@ -904,8 +932,8 @@ const Deposit = () => {
 
                         <span
                           className={`w-2 h-2 rounded-full ${wallet?.status === "active"
-                            ? "bg-success-500"
-                            : "bg-danger-500"
+                              ? "bg-success-500"
+                              : "bg-danger-500"
                             }`}
                         />
 
@@ -921,51 +949,127 @@ const Deposit = () => {
                   </div>
 
                   {/* =================================================
-                      AMOUNT
+                      AMOUNT + INTEGRATED DEPOSIT CURRENCY + CONVERTER
                   ================================================= */}
 
-                  <div>
+                  <div className="space-y-4">
+                    <div>
+                      <label
+                        htmlFor="depositAmount"
+                        className="block text-sm font-medium text-surface-300 mb-2"
+                      >
+                        Deposit Amount
+                      </label>
 
-                    <label
-                      htmlFor="depositAmount"
-                      className="block text-sm font-medium text-surface-300 mb-2"
-                    >
-                      Deposit Amount
-                    </label>
+                      <div className="flex flex-col sm:flex-row gap-3">
+                        <div className="relative flex-1">
+                          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-surface-400 font-medium">
+                            {currencySymbols[currency]}
+                          </span>
 
-                    <div className="relative">
+                          <input
+                            id="depositAmount"
+                            type="text"
+                            inputMode="decimal"
+                            value={amount}
+                            onChange={handleAmountChange}
+                            placeholder="0.00"
+                            disabled={creatingDeposit}
+                            className="w-full pl-10 pr-4 py-4 rounded-xl bg-surface-950 border border-surface-700 text-white text-lg outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition disabled:opacity-60"
+                          />
+                        </div>
 
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-surface-400 font-medium">
-                        {currencySymbols[currency]}
-                      </span>
+                        <div className="sm:w-44">
+                          <label htmlFor="depositCurrency" className="sr-only">
+                            Deposit currency
+                          </label>
+                          <select
+                            id="depositCurrency"
+                            value={currency}
+                            disabled={creatingDeposit}
+                            onChange={(event) => handleCurrencyChange(event.target.value)}
+                            className="w-full h-full min-h-[56px] px-4 py-3 rounded-xl bg-surface-950 border border-surface-700 text-white outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition disabled:opacity-60"
+                          >
+                            {CURRENCIES.map((item) => (
+                              <option key={item} value={item}>
+                                {item} — {currencyNames[item]}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
 
-                      <input
-                        id="depositAmount"
-                        type="text"
-                        inputMode="decimal"
-                        value={amount}
-                        onChange={handleAmountChange}
-                        placeholder="0.00"
-                        disabled={creatingDeposit}
-                        className="w-full pl-10 pr-4 py-4 rounded-xl bg-surface-950 border border-surface-700 text-white text-lg outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition disabled:opacity-60"
-                      />
-
-                    </div>
-
-                    <div className="flex justify-between mt-2">
-
-                      <p className="text-xs text-surface-500">
-                        Enter the amount you want to deposit.
-                      </p>
-
-                      {amount && (
-                        <p className="text-xs text-brand-400 font-medium">
-                          {formattedAmount}
+                      <div className="flex flex-wrap justify-between gap-2 mt-2">
+                        <p className="text-xs text-surface-500">
+                          This is the currency and amount that will be submitted for your deposit.
                         </p>
-                      )}
-
+                        {amount && (
+                          <p className="text-xs text-brand-400 font-medium">
+                            {formattedAmount}
+                          </p>
+                        )}
+                      </div>
                     </div>
 
+                    <div className="rounded-xl border border-surface-700 bg-surface-950 p-5">
+                      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold">Currency Converter</p>
+                          <p className="text-xs text-surface-500 mt-1">
+                            Live indicative rate · does not change your deposit.
+                          </p>
+                        </div>
+                        <div className="sm:w-48">
+                          <label htmlFor="conversionCurrency" className="block text-xs text-surface-400 mb-2">
+                            Show equivalent in
+                          </label>
+                          <select
+                            id="conversionCurrency"
+                            value={conversionCurrency}
+                            onChange={(event) => setConversionCurrency(event.target.value)}
+                            className="w-full px-3 py-2.5 rounded-lg bg-surface-900 border border-surface-700 text-white outline-none focus:border-brand-500 transition"
+                          >
+                            {CURRENCIES.map((item) => (
+                              <option key={item} value={item}>{item} — {currencyNames[item]}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 rounded-lg bg-surface-900 border border-surface-800 p-4">
+                        <p className="text-xs text-surface-500">Estimated equivalent</p>
+                        <p className="text-2xl font-bold text-brand-400 mt-1">
+                          {currency === conversionCurrency
+                            ? formatMoney(amount || 0, currency)
+                            : loadingExchangeRates
+                              ? "Loading rate…"
+                              : convertedAmount !== null
+                                ? formatMoney(convertedAmount, conversionCurrency)
+                                : "—"}
+                        </p>
+                        {currency === conversionCurrency ? (
+                          <p className="text-xs text-surface-500 mt-2">Choose a different currency to compare the amount.</p>
+                        ) : Number.isFinite(conversionRate) && conversionRate > 0 ? (
+                          <p className="text-xs text-surface-500 mt-2">
+                            1 {currency} = {conversionRate.toLocaleString("en-US", { maximumFractionDigits: 6 })} {conversionCurrency}
+                          </p>
+                        ) : null}
+                        {loadingExchangeRates && (
+                          <p className="text-xs text-surface-500 mt-2 flex items-center gap-2">
+                            <FaSpinner className="animate-spin" /> Fetching live exchange rate…
+                          </p>
+                        )}
+                        {exchangeRateError && (
+                          <p className="text-xs text-warning-400 mt-2">{exchangeRateError}</p>
+                        )}
+                        {!exchangeRateError && exchangeRateDate && (
+                          <p className="text-xs text-surface-600 mt-2">Rate source updated: {exchangeRateDate}</p>
+                        )}
+                      </div>
+                      <p className="text-xs text-surface-500 leading-relaxed mt-3">
+                        This estimate is for reference only. Your deposit request uses exactly {amount ? formattedAmount : `the amount you enter`} in {currency}. No currency conversion or wallet credit happens from this display; the wallet is credited only after admin approval of the submitted payment.
+                      </p>
+                    </div>
                   </div>
 
                   {/* =================================================
@@ -1038,8 +1142,8 @@ const Deposit = () => {
                                 )
                               }
                               className={`w-full text-left rounded-xl border p-4 transition ${isSelected
-                                ? "border-brand-500 bg-brand-500/10"
-                                : "border-surface-700 bg-surface-950 hover:border-surface-600"
+                                  ? "border-brand-500 bg-brand-500/10"
+                                  : "border-surface-700 bg-surface-950 hover:border-surface-600"
                                 }`}
                             >
 
@@ -1047,8 +1151,8 @@ const Deposit = () => {
 
                                 <div
                                   className={`w-11 h-11 rounded-xl flex items-center justify-center ${isSelected
-                                    ? "bg-brand-500/20 text-brand-400"
-                                    : "bg-surface-800 text-surface-400"
+                                      ? "bg-brand-500/20 text-brand-400"
+                                      : "bg-surface-800 text-surface-400"
                                     }`}
                                 >
                                   <Icon />
@@ -1080,8 +1184,8 @@ const Deposit = () => {
 
                                 <div
                                   className={`w-5 h-5 rounded-full border flex items-center justify-center ${isSelected
-                                    ? "border-brand-500"
-                                    : "border-surface-600"
+                                      ? "border-brand-500"
+                                      : "border-surface-600"
                                     }`}
                                 >
                                   {isSelected && (
