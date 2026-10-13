@@ -218,7 +218,7 @@ const Deposit = () => {
 
       setError(
         err?.response?.data?.message ||
-          "Unable to load your USD wallet. Please try again."
+        "Unable to load your USD wallet. Please try again."
       );
     } finally {
       setLoadingWallet(false);
@@ -267,7 +267,7 @@ const Deposit = () => {
 
       setError(
         err?.response?.data?.message ||
-          "Unable to load available USD payment methods."
+        "Unable to load available USD payment methods."
       );
 
       setPaymentMethods([]);
@@ -483,9 +483,9 @@ const Deposit = () => {
 
       setError(
         err?.response?.data?.message ||
-          err?.response?.data?.error ||
-          err.message ||
-          "Unable to create your deposit. Please try again."
+        err?.response?.data?.error ||
+        err.message ||
+        "Unable to create your deposit. Please try again."
       );
     } finally {
       setCreatingDeposit(false);
@@ -556,8 +556,8 @@ const Deposit = () => {
 
       setError(
         err?.response?.data?.message ||
-          err?.response?.data?.error ||
-          "Unable to submit your payment. Please try again."
+        err?.response?.data?.error ||
+        "Unable to submit your payment. Please try again."
       );
     } finally {
       setSubmittingPayment(false);
@@ -593,8 +593,28 @@ const Deposit = () => {
   =====================================================
   */
 
-  const paymentInstructions =
-    deposit?.paymentMethod || selectedPaymentMethod;
+
+  const depositPaymentMethod = deposit?.paymentMethod;
+
+  const paymentInstructions = useMemo(() => {
+    // The API may return only the payment method ID.
+    // In that case, use the full method already fetched by the page.
+    if (
+      !depositPaymentMethod ||
+      typeof depositPaymentMethod !== "object" ||
+      Array.isArray(depositPaymentMethod)
+    ) {
+      return selectedPaymentMethod;
+    }
+
+    // Merge both objects so any missing details can come
+    // from the selected payment method.
+    return {
+      ...(selectedPaymentMethod || {}),
+      ...depositPaymentMethod,
+    };
+  }, [depositPaymentMethod, selectedPaymentMethod]);
+
 
   /*
   =====================================================
@@ -682,11 +702,10 @@ const Deposit = () => {
 
             <div className="flex items-center gap-3">
               <div
-                className={`w-9 h-9 rounded-full flex items-center justify-center font-bold ${
-                  step >= 2
+                className={`w-9 h-9 rounded-full flex items-center justify-center font-bold ${step >= 2
                     ? "bg-brand-500 text-white"
                     : "bg-surface-800 text-surface-500"
-                }`}
+                  }`}
               >
                 2
               </div>
@@ -753,7 +772,7 @@ const Deposit = () => {
                 >
                   {/* WALLET */}
 
-                 
+
 
                   {/* AMOUNT */}
 
@@ -832,9 +851,9 @@ const Deposit = () => {
                             ? "Loading rate..."
                             : convertedAmount !== null
                               ? formatMoney(
-                                  convertedAmount,
-                                  conversionCurrency
-                                )
+                                convertedAmount,
+                                conversionCurrency
+                              )
                               : "—"}
                       </p>
 
@@ -914,19 +933,17 @@ const Deposit = () => {
                               onClick={() =>
                                 setSelectedPaymentMethod(method)
                               }
-                              className={`w-full text-left rounded-xl border p-4 transition ${
-                                isSelected
+                              className={`w-full text-left rounded-xl border p-4 transition ${isSelected
                                   ? "border-brand-500 bg-brand-500/10"
                                   : "border-surface-700 bg-surface-950 hover:border-surface-600"
-                              }`}
+                                }`}
                             >
                               <div className="flex items-center gap-4">
                                 <div
-                                  className={`w-11 h-11 rounded-xl flex items-center justify-center ${
-                                    isSelected
+                                  className={`w-11 h-11 rounded-xl flex items-center justify-center ${isSelected
                                       ? "bg-brand-500/20 text-brand-400"
                                       : "bg-surface-800 text-surface-400"
-                                  }`}
+                                    }`}
                                 >
                                   <Icon />
                                 </div>
@@ -949,11 +966,10 @@ const Deposit = () => {
                                 </div>
 
                                 <div
-                                  className={`w-5 h-5 rounded-full border flex items-center justify-center ${
-                                    isSelected
+                                  className={`w-5 h-5 rounded-full border flex items-center justify-center ${isSelected
                                       ? "border-brand-500"
                                       : "border-surface-600"
-                                  }`}
+                                    }`}
                                 >
                                   {isSelected && (
                                     <span className="w-2.5 h-2.5 rounded-full bg-brand-500" />
@@ -967,7 +983,7 @@ const Deposit = () => {
                     )}
                   </div>
 
-                
+
 
                   {/* SUBMIT */}
 
