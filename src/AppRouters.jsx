@@ -69,8 +69,9 @@ import Deposit from "./pages/users/Deposit";
 import Withdraw from "./pages/users/Withdrawals";
 import KYC from "./pages/users/KYC";
 import UserDepositDetails from "./pages/users/DepositDetails";
-import TradeHistory from "./pages/user/TradeHistory";
-import Performance from "./pages/user/Performance";
+import TradeHistory from "./pages/users/TradingHistory";
+import Performance from "./pages/users/Performance";
+import Trade from "./pages/users/Trade";
 
 
 function App() {
@@ -357,6 +358,7 @@ function App() {
 
               <Route path="/trade-history" element={<TradeHistory />} />
               <Route path="/performance" element={<Performance />} />
+              <Route path="/trade" element={<Trade />} />
 
             </Route>
 

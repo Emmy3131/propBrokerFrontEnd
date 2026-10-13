@@ -40,7 +40,7 @@ const SidebarMenu = ({ onNavigate }) => {
         />
 
         <MenuItem
-          to="/trading"
+          to="/trade"
           title="Trading"
           icon={<FaChartLine />}
           onClick={onNavigate}
