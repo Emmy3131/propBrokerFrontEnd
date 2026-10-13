@@ -61,10 +61,24 @@ const SidebarMenu = ({ onNavigate }) => {
         />
 
         <MenuItem
-          to="/userDashboard/orders"
-          title="Orders"
+          to="/trade-history"
+          title="Trade History"
           icon={<FaExchangeAlt />}
           onClick={onNavigate}
+        />
+
+        <MenuItem
+          to="/performance"
+          title="Performance"
+          icon={<FaChartLine />}
+          onClick={onNavigate}
+        />
+
+        <MenuItem
+        to="/userDashboard/settings"
+        title="Settings"
+        icon={<FaCog />}
+        onClick={onNavigate} 
         />
       </div>
 

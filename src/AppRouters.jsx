@@ -69,6 +69,8 @@ import Deposit from "./pages/users/Deposit";
 import Withdraw from "./pages/users/Withdrawals";
 import KYC from "./pages/users/KYC";
 import UserDepositDetails from "./pages/users/DepositDetails";
+import TradeHistory from "./pages/user/TradeHistory";
+import Performance from "./pages/user/Performance";
 
 
 function App() {
@@ -197,7 +199,7 @@ function App() {
                 element={<AdminUserDetails />}
               />
 
-               {/* Deposits */}
+              {/* Deposits */}
 
               <Route
                 path="/admin/payment-methods"
@@ -352,6 +354,9 @@ function App() {
                 path="/user/kyc"
                 element={<KYC />}
               />
+
+              <Route path="/trade-history" element={<TradeHistory />} />
+              <Route path="/performance" element={<Performance />} />
 
             </Route>
 
