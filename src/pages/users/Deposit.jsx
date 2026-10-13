@@ -521,7 +521,7 @@ const Deposit = () => {
     try {
       setSubmittingPayment(true);
 
-      const response = await api.patch(
+      const response = await api.post(
         `/deposits/${depositId}/submit`,
         {
           transactionReference: transactionReference.trim(),
