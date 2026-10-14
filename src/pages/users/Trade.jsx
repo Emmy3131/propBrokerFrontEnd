@@ -99,10 +99,18 @@ export default function Trade() {
     }
 
     let cancelled = false;
+    let requestInProgress = false;
+    let hasLoadedSuccessfully = false;
 
-    const loadEquityHistory = async () => {
-      setEquityLoading(true);
-      setEquityError("");
+    const loadEquityHistory = async (initialLoad = false) => {
+      if (cancelled || requestInProgress) return;
+
+      requestInProgress = true;
+
+      if (initialLoad) {
+        setEquityLoading(true);
+        setEquityError("");
+      }
 
       try {
         const response = await api.get(
@@ -110,25 +118,39 @@ export default function Trade() {
           { params: { limit: 200 } },
         );
 
-        if (!cancelled) {
-          setEquityHistory(getPayload(response));
+        if (cancelled) return;
+
+        const payload = getPayload(response);
+
+        if (!Array.isArray(payload?.points)) {
+          throw new Error("Invalid equity-history response.");
         }
+
+        setEquityHistory(payload);
+        setEquityError("");
+        hasLoadedSuccessfully = true;
       } catch (error) {
-        if (!cancelled) {
-          setEquityHistory(null);
+        if (!cancelled && !hasLoadedSuccessfully) {
           setEquityError(getErrorMessage(error));
         }
       } finally {
-        if (!cancelled) {
+        requestInProgress = false;
+
+        if (!cancelled && initialLoad) {
           setEquityLoading(false);
         }
       }
     };
 
-    loadEquityHistory();
+    loadEquityHistory(true);
+
+    const intervalId = setInterval(() => {
+      loadEquityHistory(false);
+    }, 15000);
 
     return () => {
       cancelled = true;
+      clearInterval(intervalId);
     };
   }, [accountId]);
 
