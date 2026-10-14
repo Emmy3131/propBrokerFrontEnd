@@ -5,6 +5,7 @@ import api from "../../library/api";
 import TradeSummary from "../../components/Trading/TradeSummary";
 import OrderForm from "../../components/Trading/OrderForm";
 import OpenPositions from "../../components/Trading/OpenPosition";
+import EquityCurve from "../../components/Trading/EquityCurve";
 
 const getPayload = (response) => response?.data?.data ?? response?.data ?? {};
 
@@ -37,6 +38,10 @@ export default function Trade() {
   const [submitting, setSubmitting] = useState(false);
   const [closingId, setClosingId] = useState("");
   const [creatingAccount, setCreatingAccount] = useState(false);
+
+  const [equityHistory, setEquityHistory] = useState(null);
+  const [equityLoading, setEquityLoading] = useState(false);
+  const [equityError, setEquityError] = useState("");
 
   const selectedAccount = useMemo(
     () => accounts.find((account) => getId(account) === accountId),
@@ -84,6 +89,48 @@ export default function Trade() {
   useEffect(() => {
     loadTradingData();
   }, [loadTradingData]);
+
+  useEffect(() => {
+    if (!accountId) {
+      setEquityHistory(null);
+      setEquityError("");
+      setEquityLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadEquityHistory = async () => {
+      setEquityLoading(true);
+      setEquityError("");
+
+      try {
+        const response = await api.get(
+          `/trading-accounts/${accountId}/equity-history`,
+          { params: { limit: 200 } },
+        );
+
+        if (!cancelled) {
+          setEquityHistory(getPayload(response));
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setEquityHistory(null);
+          setEquityError(getErrorMessage(error));
+        }
+      } finally {
+        if (!cancelled) {
+          setEquityLoading(false);
+        }
+      }
+    };
+
+    loadEquityHistory();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [accountId]);
 
   const handleCreateDemoAccount = async () => {
     if (creatingAccount || refreshing || submitting || closingId) return;
@@ -193,7 +240,14 @@ export default function Trade() {
         </button>
       </div>
 
+
       <TradeSummary account={selectedAccount} positions={displayedPositions} />
+
+      <EquityCurve
+        history={equityHistory}
+        loading={equityLoading}
+        error={equityError}
+      />
 
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
         <OrderForm
